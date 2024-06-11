@@ -2,6 +2,7 @@
 
 ## Display
 - [SparkFun 20x4 SerLCD - RGB Backlight (Qwiic)](https://www.sparkfun.com/products/16398)
+- [Sparkfun GPS Receiver EM-506](https://www.sparkfun.com/products/retired/12751?gad_source=1&gclid=CjwKCAjwvIWzBhAlEiwAHHWgvSobsUo4UcnNtbLcr_K5_tTe-CKqlWX-Sp2HFwIC15aSUAIABPIaaRoCmp8QAvD_BwE)
 
 # Helpful Links
 
