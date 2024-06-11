@@ -162,6 +162,7 @@ void getgps(TinyGPS &gps) {
     dataFile.print(timeStamp);
     dataFile.print(",");
     //output also on Serial monitor for debugging
+    Serial.print("Timestamp: ");
     Serial.print(timeStamp);
     Serial.print(",");
 
@@ -269,7 +270,7 @@ void getgps(TinyGPS &gps) {
   Serial.print("Course (degrees): ");
   Serial.println(gps.f_course());
   // And same goes for speed
-  Serial.print("Speed(kmph): ");
+  Serial.print("Speed (kmph): ");
   Serial.println(gps.f_speed_kmph());
   Serial.println();
 
