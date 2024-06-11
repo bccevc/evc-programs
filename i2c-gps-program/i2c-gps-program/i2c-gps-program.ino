@@ -74,10 +74,6 @@ void setup() {
   {
     //code for SD
     Serial.begin(9600);
-    while (!Serial) {
-      ;  // wait for serial port to connect. Needed for Leonardo only
-    }
-
     Serial.print("Initializing SD card...");
     // make sure that the default chip select pin is set to
     // output, even if you don't use it:
@@ -156,54 +152,57 @@ void getgps(TinyGPS &gps) {
   // this opens the file and appends to the end of file
   // if the file does not exist, this will create a new file.
   File dataFile = SD.open("datalog.txt", FILE_WRITE);
+
+  /*
+  Timestamp (ms), Lat, Long, Date (MM/DD/YYYY), Time (HH:MM:SS), Altitude (m),
+  Course (deg), Speed (kmph)
+  */
+
   if (dataFile) {
     int timeStamp = millis();
     //write to uSD card
     dataFile.print(timeStamp);
-    dataFile.print(" ms");
-    dataFile.print(", ");
+    dataFile.print(",");
     //output also on Serial monitor for debugging
     Serial.print(timeStamp);
     Serial.print(",");
 
-    dataFile.print("Lat/Long: ");
     dataFile.print(latitude, 5);
-    dataFile.print(", ");
+    dataFile.print(",");
     dataFile.print(longitude, 5);
+    dataFile.print(",");
 
     int year;
     byte month, day, hour, minute, second, hundredths;
     gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths);
     // Print data and time
-    dataFile.print("Date: ");
     dataFile.print(month, DEC);
     dataFile.print("/");
     dataFile.print(day, DEC);
     dataFile.print("/");
     dataFile.print(year);
     int echour = hour - 5;
-    dataFile.print("  Time: ");
+    dataFile.print(",");
     dataFile.print(echour, DEC);
     dataFile.print(":");
     dataFile.print(minute, DEC);
     dataFile.print(":");
     dataFile.print(second, DEC);
     dataFile.print(".");
-    dataFile.println(hundredths, DEC);
+    dataFile.print(hundredths, DEC);
+    dataFile.print(",");
 
     // Here you can print the altitude and course values directly since
     // there is only one value for the function
-    dataFile.print("Altitude (meters): ");
-    dataFile.println(gps.f_altitude());
+    dataFile.print(gps.f_altitude());
+    dataFile.print(",");
     // Same goes for course
-    dataFile.print("Course (degrees): ");
-    dataFile.println(gps.f_course());
+    dataFile.print(gps.f_course());
+    dataFile.print(",");
     // And same goes for speed
-    dataFile.print("Speed(kmph): ");
-    dataFile.println(gps.f_speed_kmph());
+    dataFile.print(gps.f_speed_kmph());
 
-    dataFile.println();
-    dataFile.println();  //create a new row to read data more clearly
+    dataFile.println();  // Create a new row
     dataFile.close();    //close file
     Serial.println();    //print to the serial port too:
   } else {
