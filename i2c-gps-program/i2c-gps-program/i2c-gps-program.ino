@@ -95,7 +95,6 @@ void setup() {
     lcd.begin(Wire);
 
     Wire.setClock(400000);  //Optional - set I2C SCL to High Speed Mode of 400kHz
-                            //Code for SD card
 
     lcd.clear();
     lcd.cursor();  //Turn on the underline cursor
@@ -154,13 +153,12 @@ void getgps(TinyGPS &gps) {
   File dataFile = SD.open("datalog.txt", FILE_WRITE);
 
   /*
-  Timestamp (ms), Lat, Long, Date (MM/DD/YYYY), Time (HH:MM:SS), Altitude (m),
-  Course (deg), Speed (kmph)
+  Timestamp (ms), Lat, Long, Date (MM/DD/YYYY), Time (HH:MM:SS), Altitude (m), Course (deg), Speed (kmph)
   */
 
   if (dataFile) {
     int timeStamp = millis();
-    //write to uSD card
+    //write to SD card
     dataFile.print(timeStamp);
     dataFile.print(",");
     //output also on Serial monitor for debugging
@@ -175,13 +173,16 @@ void getgps(TinyGPS &gps) {
     int year;
     byte month, day, hour, minute, second, hundredths;
     gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths);
-    // Print data and time
+
+    // Date
     dataFile.print(month, DEC);
     dataFile.print("/");
     dataFile.print(day, DEC);
     dataFile.print("/");
     dataFile.print(year);
-    int echour = hour - 5;
+
+    // Time
+    int echour = hour - 4;
     dataFile.print(",");
     dataFile.print(echour, DEC);
     dataFile.print(":");
@@ -221,7 +222,7 @@ void getgps(TinyGPS &gps) {
   Serial.print(day, DEC);
   Serial.print("/");
   Serial.print(year);
-  int echour = hour - 5;
+  int echour = hour - 4;
   Serial.print("  Time: ");
   Serial.print(echour, DEC);
   Serial.print(":");
