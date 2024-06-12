@@ -36,6 +36,10 @@
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 //for 20x4 lcd display
+//added for mega 40-41
+#include <defaultsMega.h>  //changed from defaultsMega.h
+#include <global.h>
+
 #include <SPI.h>
 #include <SD.h>
 

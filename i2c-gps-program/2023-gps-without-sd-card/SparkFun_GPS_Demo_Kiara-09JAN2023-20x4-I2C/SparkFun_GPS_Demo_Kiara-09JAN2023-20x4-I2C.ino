@@ -36,7 +36,7 @@
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 //added 39-40 for mega
-#include <defaultsMega.h>  //changed from defaultsMega.h
+#include <defaults.h>  //changed from defaultsMega.h
 #include <global.h>
 #include <mcp2515.h>
 #include <mcp2515_defs.h>
