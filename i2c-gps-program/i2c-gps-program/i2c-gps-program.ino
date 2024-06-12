@@ -50,6 +50,13 @@ SerLCD lcd;
 #define TXPIN 5
 //Set this value equal to the baud rate of your GPS
 #define GPSBAUD 4800
+float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist; //saved long/lat
+float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitude, float SavedLongitude); // added 
+//float SavedLongitude= -74.070808; //american dream
+//float SavedLatitude= 40.809204; //american dream
+float SavedLongitude;//= 0; 
+float SavedLatitude;//= 0; 
+float Constant = 121.32; //lines 53-61 from calc disc
 const int chipSelect = 9;  //for SD card
 // Create an instance of the TinyGPS object
 TinyGPS gps;
@@ -122,7 +129,22 @@ void loop() {
     if (gps.encode(c))        // if there is a new valid sentence...
     {
       Serial.println("       ...HERE IT COMES...           ");  //BobR
-      getgps(gps);                                              // then grab the data.
+      getgps(gps); // then grab the data.
+      CurrentLatitude = latitude;//added from lines 135-149
+      CurrentLongitude = longitude; //added
+      distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude); //added
+      Serial.print("distance = " );
+      Serial.print(distance,6);   
+      TotalDist = distance + TotalDist; 
+      Serial.print(" Trip: "); 
+      Serial.print(TotalDist,2); 
+      Serial.println();
+      lcd.setCursor(0,2);
+      lcd.print("Trip:");
+      lcd.print(TotalDist,2);
+      Serial.println();
+      SavedLongitude = CurrentLongitude;
+      SavedLatitude = CurrentLatitude;
     }
   }
 }
@@ -280,4 +302,33 @@ void getgps(TinyGPS &gps) {
   // gps.stats(&chars, &sentences, &failed_checksum);
   //Serial.print("Failed Checksums: ");Serial.print(failed_checksum);
   //Serial.println(); Serial.println();
+}
+
+float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitude, float SavedLongitude)
+{
+  
+// HaverSine version
+    const float Deg2Rad = 0.01745329252;               // (PI/180)  0.017453293, 0.0174532925
+    //const double EarthRadius = 6372.795;              //6372.7976 In Kilo meters, will scale to other values
+    const double EarthRadius = 3961;              // In Miles 3956
+    //const float EarthRadius = 20908120.1;              // In feet  20908128.6
+    float DeltaLatitude, DeltaLongitude, a, Distance;
+if (SavedLongitude==0 ||SavedLatitude==0){
+SavedLongitude = CurrentLongitude;
+SavedLatitude = CurrentLatitude;  
+}
+    // degrees to radians
+    CurrentLatitude = (CurrentLatitude + 180) * Deg2Rad;     // Remove negative offset (0-360), convert to RADS
+    CurrentLongitude = (CurrentLongitude + 180) * Deg2Rad;
+    SavedLatitude = (SavedLatitude + 180) * Deg2Rad;
+    SavedLongitude = (SavedLongitude + 180) * Deg2Rad;
+
+    DeltaLatitude = SavedLatitude - CurrentLatitude;
+    DeltaLongitude = SavedLongitude - CurrentLongitude;
+
+    a =(sin(DeltaLatitude/2) * sin(DeltaLatitude/2)) + cos(CurrentLatitude) * cos(SavedLatitude) * (sin(DeltaLongitude/2) * sin(DeltaLongitude/2));
+    Distance = EarthRadius * (2 * atan2(sqrt(a),sqrt(1-a)));
+  
+    return(Distance);
+  
 }
