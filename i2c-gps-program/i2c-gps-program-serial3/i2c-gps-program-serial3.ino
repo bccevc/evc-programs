@@ -101,6 +101,7 @@ void setup() {
   }
   //Sd ends here setup
   {
+    Serial3.begin(GPSBAUD);
     Serial.begin(115200);
     Wire.begin();
     lcd.begin(Wire);
@@ -127,9 +128,9 @@ void setup() {
 // the RX pin of the ardiuno, makes sure the data is valid NMEA sentences,
 // then jumps to the getgps() function.
 void loop() {
-  while (uart_gps.available())  // While there is data on the RX pin...
+  while (Serial3.available())  // While there is data on the RX pin...
   {
-    int c = uart_gps.read();  // load the data into a variable...
+    int c = Serial3.read();  // load the data into a variable...
     if (gps.encode(c))        // if there is a new valid sentence...
     {
       Serial.println("       ...HERE IT COMES...           ");  //BobR
