@@ -15,3 +15,6 @@ Use jumper wires to connect pins:
 |13|52|
 |11|51|
 |12|50|
+
+# SparkFun LCD to CAN-bus Shield
+- [Hookup guide](https://learn.sparkfun.com/tutorials/avr-based-serial-enabled-lcds-hookup-guide/introduction)
