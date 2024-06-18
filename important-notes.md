@@ -18,3 +18,6 @@ Use jumper wires to connect pins:
 
 # SparkFun LCD to CAN-bus Shield
 - [Hookup guide](https://learn.sparkfun.com/tutorials/avr-based-serial-enabled-lcds-hookup-guide/introduction)
+
+# Notes on Connecting to the CAN-bus
+- When running programs, make sure the baud rates are the same as the CAN-bus via `CANSPEED_125`.
