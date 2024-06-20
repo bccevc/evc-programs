@@ -21,3 +21,12 @@ Use jumper wires to connect pins:
 
 # Notes on Connecting to the CAN-bus
 - When running programs, make sure the baud rates are the same as the CAN-bus via `CANSPEED_125`.
+
+# Truck Metrics
+- Voltage
+- Current
+- Time
+- Speed (kmph)
+- Lat/Long
+- Altitude (meters)
+- Course (degrees)
