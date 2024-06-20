@@ -30,3 +30,4 @@ Use jumper wires to connect pins:
 - Lat/Long
 - Altitude (meters)
 - Course (degrees)
+- RPM
