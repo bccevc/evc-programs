@@ -1,4 +1,7 @@
 # Hardware
+- Electrocookie Mega R3 Proto Shield
+- Arduino Mega
+- SparkFun CAN-BUS Shield
 
 ## Display
 - [SparkFun 20x4 SerLCD - RGB Backlight (Qwiic)](https://www.sparkfun.com/products/16398)

@@ -31,3 +31,4 @@ Use jumper wires to connect pins:
 - Altitude (meters)
 - Course (degrees)
 - RPM
+- Trip
