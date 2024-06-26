@@ -49,3 +49,4 @@ Use jumper wires to connect pins:
 - Course (degrees)
 - RPM
 - Trip
+- Battery temperature

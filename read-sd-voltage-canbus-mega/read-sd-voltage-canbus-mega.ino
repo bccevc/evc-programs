@@ -152,14 +152,11 @@ if (mcp2515_check_message())
                         int timeStamp = millis();
                         int IDEC = 0;
                         //write to uSD card
+                        // timestamp, current, voltage
                         dataFile.print(timeStamp);
-                        dataFile.print(" ms");
-                        dataFile.print(", ");
-                        
-                        dataFile.print("current= ");
+                        dataFile.print(",");
                         dataFile.print((float)IDEC/10,1);
-                        dataFile.print("   ");
-                        dataFile.print("voltage= ");
+                        dataFile.print(",");
                         int i=3;
                         dataFile.print(message.data[i],DEC);                        
                     }
