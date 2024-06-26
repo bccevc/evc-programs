@@ -151,8 +151,7 @@ if (mcp2515_check_message())
                         //LeahAna write timeStamp to SD card
                         int timeStamp = millis();
                         int IDEC = 0;
-                        //write to uSD card
-                        // timestamp, current, voltage
+                        //write to uSD card: timestamp, current, voltage
                         dataFile.print(timeStamp);
                         dataFile.print(",");
                         dataFile.print((float)IDEC/10,1);
