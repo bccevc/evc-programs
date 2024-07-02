@@ -48,7 +48,7 @@ void setup() {
   Serial.println("CAN Read - Testing receival of CAN Bus message");  
   delay(1000);
   
-  if (Canbus.init(CANSPEED_500)) {
+  if (Canbus.init(CANSPEED_125)) {
     Serial.println("CAN Init ok");
   }
   else {
@@ -95,181 +95,156 @@ void setup() {
 void loop() { //@void
   int timeStamp = millis();
   tCAN message;
-  if (mcp2515_check_message()) { //@1
-    if (mcp2515_get_message(&message)) { //@2       
-      Serial.print("ID: ");
-      Serial.print(message.id, HEX);
 
-      Serial.print(", ");
-      Serial.print("Data: ");
-      Serial.print(message.header.length,DEC);
-      Serial.print("  ");
-      for (int i = 0; i < message.header.length; i++) {	
-        Serial.print(message.data[i],HEX);
-        Serial.print(" ");
-      }
-      Serial.print(" Timestamp: ");
-      Serial.print(timeStamp);
-      Serial.println("");
+  if (mcp2515_check_message()) 
+  { //@1
+    if (mcp2515_get_message(&message)) 
+  { //@2       
+               Serial.print("ID: ");
+               Serial.print(message.id,HEX);
+        
+               Serial.print(", ");
+               Serial.print("Data: ");
+               Serial.print(message.header.length,DEC);
+               Serial.print("  "); //Leah added space to seperate length from message
+               for(int i=0;i<message.header.length;i++) 
+                {	
+                  Serial.print(message.data[i],HEX);
+                  Serial.print(" ");
+                }
+               Serial.println("");
+             
 
-      if (message.id == 0x03B) {
-        int c = Serial3.read();
-        while (!gps.encode(c)) {
-          Serial.print("wait");
-        }
+///////////prints to LCD 
 
-        // Print GPS to LCD (COMMENT OUT)
-        // while(Serial3.available()) { // While there is data on the RX pin...
-        //   int c = Serial3.read(); // load the data into a variable...
-        //   if(gps.encode(c)) { // if there is a new valid sentence...
-        //     getgps(gps); // then grab the data.
-        //     CurrentLatitude = latitude;//added
-        //     CurrentLongitude = longitude; //added
-        //     distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude);
-        //     Serial.print("distance = " );
-        //     Serial.print(distance,6);   
-        //     TotalDist = distance + TotalDist; 
-        //     Serial.print(" Trip: "); 
-        //     Serial.print(TotalDist,2); 
-        //     Serial.println();
-        //     lcd.setCursor(0,2);
-        //     lcd.print("Trip:");
-        //     lcd.print(TotalDist,2);
-        //     Serial.println();
-        //     SavedLongitude = CurrentLongitude;
-        //     SavedLatitude = CurrentLatitude; 
-        //   }
-        // }
+                Serial.print(message.id,HEX);
+                Serial.print(" Id "); 
+                 
+                                
+                if (message.id == 0x03B)    ////AnaLeah IF ID=3B   Bob:Removed ";"
+                  {
+                   lcd.setCursor(0,2); //Fuzail added
+                   // delay(1000);
+                   lcd.write("current:");
+                  
+    /// BobAna Leah capture current as decimal value and display on LCD
+                    
+                    int IDEC = 0; //Bob initialize IDEC to zero
+                    for(int i=0;i<2;i++) //AnaLeah removed 2 and changed to 1 so it reads one byte
+                      {
+                        Serial.print(message.data[i],HEX);
+                        Serial.print(" Hex "); 
+                  
+                  // Serial.print(message.data[i],DEC);
+                        int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
+                        Serial.print((float)MDATA/10,1);///LeahAna added this to add the decimal place
+                        ///Serial.print(MDATA,DEC); 
+                        Serial.print(" Dec "); 
 
-        // Print current to LCD
-        int IDEC = 0;
-        for (int i = 0; i < 2; i++) { //AnaLeah removed 2 and changed to 1 so it reads one byte
-            int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
-            IDEC=IDEC+(MDATA*(pow(256, 1-i)));
-        }
-        lcd.setCursor(10,0);  
-        lcd.print(message.data[3],DEC);
-        lcd.print("v");   
-        lcd.print(" ");
-        lcd.print((float)IDEC/10,1);
-        lcd.print("A");
-        Power= (message.data[3],DEC)*((float)IDEC/10);
-        Serial.print("Power:");
-        Serial.print(Power);
-        Serial.print(" Volts:");
-        Serial.print(message.data[3],DEC);
-        Serial.print(" Amps:");
-        Serial.print((float)IDEC/10,1);
-        Serial.println();
+                  // IDEC=IDEC+((message.data[i],DEC)* (pow(256, 1-i)));
+                        IDEC=IDEC+(MDATA*(pow(256, 1-i))); ///BOB changed "message.data[i]" to MDATA
+                        Serial.print(IDEC);
+                        Serial.print(" IDEC ");
+                  
+                      }
 
-        // Write current to SD
-        String dataString = "";    
-        File dataFile = SD.open("datalog.txt", FILE_WRITE);
-        if (dataFile) {  
-          timeStamp = millis();
-          int IDEC = 0;
-          //int CurrentTS, SavedTS,timeElps;
-      
-          //write to uSD card
+               lcd.print((float)IDEC/10,1); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
+                
+                Serial.println("Final");
+                
+     /// BobAna Leah capture voltage as decimal value and display on LCD
+                    lcd.setCursor(0,3);  
+                    lcd.write("voltage:"); //Bob display "voltage:" on second line
+                    
+                    for(int i=3;i<4;i++)/// AnaLeah changed i=2 to i=3.. gets rid of leading zero
+                  
+                {  
+                    lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
+                    
+                }   
+                   
+                
+                 delay(1000);               
+                  
+                   String dataString = "";    
+                   File dataFile = SD.open("datalog.txt", FILE_WRITE);
 
-          //CurrentTS = timestamp; 
-          dataFile.print(timeStamp);
-          dataFile.print(" ms");
-          dataFile.print(", ");
-          dataFile.print(" current= ");
-          dataFile.print((float)IDEC/10,1);
-          dataFile.print("   ");
-          dataFile.print("voltage= ");
-          int i = 3;
-          dataFile.print(message.data[i],DEC);                        
-        }
-        else {
-          Serial.println("Error opening datalog.txt (3B message)");
-        }
+  // if the file is available, write to it:
+                   if (dataFile)   
+                     {  
+                        //LeahAna write timeStamp to SD card
+                        int timeStamp = millis();
+                        int IDEC = 0;
+                        //write to uSD card: timestamp, current, voltage
+                        dataFile.print(timeStamp);
+                        dataFile.print(",");
+                        dataFile.print((float)IDEC/10,1);
+                        dataFile.print(",");
+                        int i=3;
+                        dataFile.print(message.data[i],DEC);                        
+                    }
+    dataFile.println(); //create a new row to read data more clearly
+    dataFile.close();   //close file
+    delay(100);//LeahAna added a delay
+    Serial.println();   //print to the serial port too:
 
-        dataFile.println();
-        dataFile.close();
-        Serial.println();
-
-        lcd.setCursor(10,2);
-        lcd.print("MPGe:");
-        lcd.print(MPGe);
-
-        // Write GPS to SD (COMMENT OUT)
-        // while(Serial3.available()) { // While there is data on the RX pin...
-        //   int c = Serial3.read(); // load the data into a variable...
-        //   if(gps.encode(c)) { // if there is a new valid sentence...
-        //     getgps(gps); // then grab the data.
-        //     CurrentLatitude = latitude;//added
-        //     CurrentLongitude = longitude; //added
-        //     distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude); //added
-        //     Serial.print("distance = " );
-        //     Serial.print(distance,6);   
-        //     TotalDist = distance + TotalDist; 
-        //     Serial.print(" Trip: "); 
-        //     Serial.print(TotalDist,2); 
-        //     Serial.println();
-        //     lcd.setCursor(0,2);
-        //     lcd.print("Trip:");
-        //     lcd.print(TotalDist,2);
-        //     Serial.println();
-        //     SavedLongitude = CurrentLongitude;
-        //     SavedLatitude = CurrentLatitude;  
-        //   }
-        // }
-      }   
+  }
+    
+  // if the file isn't open, pop up an error:
+    
+    else
+    {
+      Serial.println("error opening datalog.txt");
+    } 
+  
 
       // This if header was commented out for some reason (COMMENT OUT)
-      if (message.id == 0x123) {
-        int CDEC = 0; //Bob initialize IDEC to zero
-        for (int i = 0; i < 2; i++) { //AnaLeah removed 2 and changed to 1 so it reads one byte
-            int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
-            CDEC=CDEC+(MDATA*(pow(256, 1-i))); ///BOB changed "message.data[i]" to MDATA
-        }
-        lcd.setCursor(10,1); 
-        lcd.print("BT:");
-        lcd.print(message.data[3],DEC);
-        lcd.print("C");
-        lcd.setCursor(0,3);
-        lcd.print("Cell#");
-        lcd.print(message.data[2],DEC);
-        lcd.setCursor(7,3);
-        lcd.print((float)CDEC/10000,3); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
-        lcd.print("v");
+      int CDEC = 0; //Bob initialize IDEC to zero
+      for (int i = 0; i < 2; i++) { //AnaLeah removed 2 and changed to 1 so it reads one byte
+          int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
+          CDEC=CDEC+(MDATA*(pow(256, 1-i))); ///BOB changed "message.data[i]" to MDATA
+      }
+      lcd.setCursor(10,1); 
+      lcd.print("BT:");
+      lcd.print(message.data[3],DEC);
+      lcd.print("C");
+      lcd.setCursor(0,1);
+      lcd.print("Cell#");
+      lcd.print(message.data[2],DEC);
+      lcd.setCursor(7,3);
+      lcd.print((float)CDEC/10000,3); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
+      lcd.print("v");
 
-        // Write to SD
-        String dataString = "";    
-        File dataFile = SD.open("datalog.txt", FILE_WRITE);
-        if (dataFile) {  
-          //LeahAna write timeStamp to SD card
-          int timeStamp = millis();
-          //  int CDEC = 0;
-          //write to uSD card
-          dataFile.print(timeStamp);
-          dataFile.print(" ms");
-          dataFile.print(", ");
-                            
-          dataFile.print("Cell#");
-          dataFile.print(message.data[2],DEC);
-          dataFile.print("  ");
-          dataFile.print((float)CDEC/10000,3); // LeahAna crossed out line below; aded the float and put IDEC instead of MDAT
-          dataFile.print("v  ");
-          dataFile.print("BT= ");
-          dataFile.print(message.data[3],DEC);                        
-              dataFile.println(); //create a new row to read data more clearly
-              dataFile.close();   //close file
-              Serial.println();   //print to the serial port too:
-        }
-        else {
-          Serial.println("Error opening datalog.txt (123 message)");
-        }
+      // Write to SD
+      String dataString = "";    
+      File dataFile = SD.open("datalog.txt", FILE_WRITE);
+      if (dataFile) {  
+        //LeahAna write timeStamp to SD card
+        int timeStamp = millis();
+        //  int CDEC = 0;
+        //write to uSD card
+        dataFile.print(timeStamp);
+        dataFile.print(" ms");
+        dataFile.print(", ");
+                          
+        dataFile.print("Cell#");
+        dataFile.print(message.data[2],DEC);
+        dataFile.print("  ");
+        dataFile.print((float)CDEC/10000,3); // LeahAna crossed out line below; aded the float and put IDEC instead of MDAT
+        dataFile.print("v  ");
+        dataFile.print("BT= ");
+        dataFile.print(message.data[3],DEC);                        
+            dataFile.println(); //create a new row to read data more clearly
+            dataFile.close();   //close file
+            Serial.println();   //print to the serial port too:
       }
       else {
-        Serial.println("Error opening Canbus Message");
+        Serial.println("Error opening datalog.txt (123 message)");
       }
     }
   }
 }
+
 
 void getgps(TinyGPS &gps) {
   gps.f_get_position(&latitude, &longitude);
