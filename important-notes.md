@@ -50,3 +50,16 @@ Use jumper wires to connect pins:
 - RPM
 - Trip
 - Battery temperature
+- MPGe
+- Power
+
+## Metrics We Currently Plan to Display
+- Speed (mph)
+- RPM
+- Battery temperature
+- Motor controller temperature
+- Pack current
+- Pack voltage
+- Lowest cell voltage
+- Lowest cell voltage ID (#)
+- kWh

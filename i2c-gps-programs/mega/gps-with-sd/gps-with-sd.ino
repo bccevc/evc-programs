@@ -229,7 +229,7 @@ void getgps(TinyGPS &gps) {
     dataFile.print(gps.f_course());
     dataFile.print(",");
     // And same goes for speed
-    dataFile.print(gps.f_speed_kmph());
+    dataFile.print(gps.f_speed_mph());
 
     dataFile.println();  // Create a new row
     dataFile.close();    //close file
@@ -288,7 +288,7 @@ void getgps(TinyGPS &gps) {
   //display speed
   lcd.setCursor(0, 1);
   lcd.print("Speed: ");
-  lcd.print(gps.f_speed_kmph());
+  lcd.print(gps.f_speed_mph());
   // Here you can print the altitude and course values directly since
   // there is only one value for the function
   Serial.print("Altitude (meters): ");
@@ -297,8 +297,8 @@ void getgps(TinyGPS &gps) {
   Serial.print("Course (degrees): ");
   Serial.println(gps.f_course());
   // And same goes for speed
-  Serial.print("Speed (kmph): ");
-  Serial.println(gps.f_speed_kmph());
+  Serial.print("Speed (mph): ");
+  Serial.println(gps.f_speed_mph());
   Serial.println();
 
   // Here you can print statistics on the sentences (not used here).

@@ -72,7 +72,6 @@ void setup() {
   // you will likely get checksum errors.
 
   Serial3.begin(GPSBAUD);
-  Serial.begin(115200);
   Wire.begin();
   lcd.begin(Wire);
   Wire.setClock(400000); // Optional - set I2C SCL to High Speed Mode of 400kHz
@@ -96,112 +95,119 @@ void loop() {
   int timeStamp = millis();
   tCAN message;
 
-  if (mcp2515_check_message()) {
-    if (mcp2515_get_message(&message)) {    
-      Serial.print("ID: ");
-      Serial.print(message.id,HEX);
-      Serial.print(", ");
-      Serial.print("Data: ");
-      Serial.print(message.header.length,DEC);
-      Serial.print("  ");
-      for (int i = 0; i < message.header.length; i++) {	
-        Serial.print(message.data[i],HEX);
-        Serial.print(" ");
-      }
-      Serial.println("");
+  // Even if you aren't using GPS, you need to include this while loop if you've included the GPS functions
+  while (Serial3.available()) {
+    int c = Serial3.read();
+    if (gps.encode(c)) {
+      getgps(gps);
+    }
 
-      // Print to LCD and write to SD
-      Serial.print(message.id,HEX);
-      Serial.print(" Id ");             
-      if (message.id == 0x03B) {
-        // Print current to LCD
-        lcd.setCursor(0,2);
-        lcd.write("current:");        
-        int IDEC = 0; //Bob initialize IDEC to zero
-        for (int i = 0; i < 2; i++) {
+    if (mcp2515_check_message()) {
+      if (mcp2515_get_message(&message)) {    
+        Serial.print("ID: ");
+        Serial.print(message.id,HEX);
+        Serial.print(", ");
+        Serial.print("Data: ");
+        Serial.print(message.header.length,DEC);
+        Serial.print("  ");
+        for (int i = 0; i < message.header.length; i++) {	
           Serial.print(message.data[i],HEX);
-          Serial.print(" Hex "); 
-          // Serial.print(message.data[i],DEC);
-          int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
-          Serial.print((float)MDATA/10,1);///LeahAna added this to add the decimal place
-          ///Serial.print(MDATA,DEC); 
-          Serial.print(" Dec "); 
-          // IDEC=IDEC+((message.data[i],DEC)* (pow(256, 1-i)));
-          IDEC=IDEC+(MDATA*(pow(256, 1-i))); ///BOB changed "message.data[i]" to MDATA
-          Serial.print(IDEC);
-          Serial.print(" IDEC ");
+          Serial.print(" ");
         }
-        lcd.print((float)IDEC/10,1); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
-        Serial.println("Final");
-        
-        // Print voltage to LCD
-        lcd.setCursor(0,3);  
-        lcd.write("voltage:"); //Bob display "voltage:" on second line
-        for (int i = 3; i < 4; i++) { // Gets rid of leading zero
-          lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
-        }
-        delay(1000); // Remove if there's a second gap on timestamp?       
-        
-        // Write timestamp, current, voltage to SD
-        String dataString = "";    
-        File dataFile = SD.open("datalog.txt", FILE_WRITE);
-        if (dataFile) {  
-          int timeStamp = millis();
-          int IDEC = 0;
-          dataFile.print(timeStamp);
-          dataFile.print(",");
-          dataFile.print((float)IDEC/10,1);
-          dataFile.print(",");
-          int i=3;
-          dataFile.print(message.data[i],DEC);
-          dataFile.println();
-          dataFile.close();
-          delay(100); // Possibly remove if affects timestamp?
-          Serial.println();                   
-        }
-        else {
-          Serial.println("error opening datalog.txt");
-        }
-      }
+        Serial.println("");
 
-      // Print battery temp, cell #, voltage to LCD
-      int CDEC = 0; //Bob initialize IDEC to zero
-      for (int i = 0; i < 2; i++) { // Removed 2 and changed to 1 so it reads one byte
-        int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
-        CDEC=CDEC+(MDATA*(pow(256, 1-i))); // BOB changed "message.data[i]" to MDATA
-      }
-      lcd.setCursor(10,1); 
-      lcd.print("BT:");
-      lcd.print(message.data[3],DEC);
-      lcd.print("C");
-      lcd.setCursor(0,1);
-      lcd.print("Cell#");
-      lcd.print(message.data[2],DEC);
-      lcd.setCursor(7,3);
-      lcd.print((float)CDEC/10000,3); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
-      lcd.print("v");
+        // Print to LCD and write to SD
+        Serial.print(message.id,HEX);
+        Serial.print(" Id ");             
+        if (message.id == 0x03B) {
+          // Print current to LCD
+          lcd.setCursor(0,2);
+          lcd.write("current:");        
+          int IDEC = 0; //Bob initialize IDEC to zero
+          for (int i = 0; i < 2; i++) {
+            Serial.print(message.data[i],HEX);
+            Serial.print(" Hex "); 
+            // Serial.print(message.data[i],DEC);
+            int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
+            Serial.print((float)MDATA/10,1);///LeahAna added this to add the decimal place
+            ///Serial.print(MDATA,DEC); 
+            Serial.print(" Dec "); 
+            // IDEC=IDEC+((message.data[i],DEC)* (pow(256, 1-i)));
+            IDEC=IDEC+(MDATA*(pow(256, 1-i))); ///BOB changed "message.data[i]" to MDATA
+            Serial.print(IDEC);
+            Serial.print(" IDEC ");
+          }
+          lcd.print((float)IDEC/10,1); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
+          Serial.println("Final");
+          
+          // Print voltage to LCD
+          lcd.setCursor(0,3);  
+          lcd.write("voltage:"); //Bob display "voltage:" on second line
+          for (int i = 3; i < 4; i++) { // Gets rid of leading zero
+            lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
+          }
+          delay(1000); // Remove if there's a second gap on timestamp?       
+          
+          // Write timestamp, current, voltage to SD
+          String dataString = "";    
+          File dataFile = SD.open("datalog.txt", FILE_WRITE);
+          if (dataFile) {  
+            int timeStamp = millis();
+            int IDEC = 0;
+            dataFile.print(timeStamp);
+            dataFile.print(",");
+            dataFile.print((float)IDEC/10,1);
+            dataFile.print(",");
+            // int i=3;
+            dataFile.print(message.data[3],DEC); //originally calling i
+            dataFile.close();
+            delay(100); // Possibly remove if affects timestamp?
+            Serial.println();                   
+          }
+          else {
+            Serial.println("error opening datalog.txt");
+          }
+        }
 
-      // Write timestamp, cell #, voltage, battery temp to SD
-      String dataString = "";    
-      File dataFile = SD.open("datalog.txt", FILE_WRITE);
-      if (dataFile) {  
-        int timeStamp = millis();
-        dataFile.print(timeStamp);
-        dataFile.print(" ms");
-        dataFile.print(", ");
-        dataFile.print("Cell#");
-        dataFile.print(message.data[2],DEC);
-        dataFile.print("  ");
-        dataFile.print((float)CDEC/10000,3); // LeahAna crossed out line below; aded the float and put IDEC instead of MDAT
-        dataFile.print("v  ");
-        dataFile.print("BT= ");
-        dataFile.print(message.data[3],DEC);                        
-        dataFile.println(); //create a new row to read data more clearly
-        dataFile.close();   //close file
-        Serial.println();   //print to the serial port too:
-      }
-      else {
-        Serial.println("Error opening datalog.txt (123 message)");
+        // Print battery temp, cell #, voltage to LCD
+        if (message.id == 0x123) {
+          int CDEC = 0; //Bob initialize IDEC to zero
+          for (int i = 0; i < 2; i++) { // Removed 2 and changed to 1 so it reads one byte
+            int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
+            CDEC=CDEC+(MDATA*(pow(256, 1-i))); // BOB changed "message.data[i]" to MDATA
+          }
+          lcd.setCursor(10,1); 
+          lcd.print("BT:");
+          lcd.print(message.data[3],DEC);
+          lcd.print("C");
+          lcd.setCursor(0,1);
+          lcd.print("Cell#");
+          lcd.print(message.data[2],DEC);
+          // lcd.setCursor(7,3);
+          // lcd.print((float)CDEC/10000,3);
+          // lcd.print("v");
+
+          // Write timestamp, cell #, voltage, battery temp to SD
+          String dataString = "";    
+          File dataFile = SD.open("datalog.txt", FILE_WRITE);
+          if (dataFile) {  
+            int timeStamp = millis();
+            dataFile.print(timeStamp);
+            dataFile.print(",");
+            dataFile.print(message.data[2],DEC);
+            dataFile.print(",");
+            // dataFile.print((float)CDEC/10000,3);
+            // dataFile.print(",");
+            dataFile.print(message.data[3],DEC);                        
+            dataFile.println();
+            dataFile.println();
+            dataFile.close();
+            Serial.println();
+          }
+          else {
+            Serial.println("Error opening datalog.txt (123 message)");
+          }
+        }
       }
     }
   }
@@ -312,7 +318,7 @@ void getgps(TinyGPS &gps) {
   Serial.print(day, DEC); 
   Serial.print("/"); 
   Serial.print(year);
-  //Print time
+  // Print time
   int echour = hour - 5;
   Serial.print("  Time: "); 
   Serial.print(echour, DEC); 
@@ -322,8 +328,8 @@ void getgps(TinyGPS &gps) {
   Serial.print(second, DEC); 
   Serial.print("."); 
   Serial.println(hundredths, DEC);
-  //Since month, day, hour, minute, second, and hundred
-  //Functions for LCD
+  // Since month, day, hour, minute, second, and hundred
+  // Functions for LCD
   lcd.setCursor(0,0);
   lcd.print(echour, DEC);
   lcd.print(":");
