@@ -105,12 +105,11 @@ void loop() {
         if (mcp2515_get_message(&message)) {      
           Serial.print("ID: ");
           Serial.print(message.id,HEX);
-
           Serial.print(", ");
           Serial.print("Data: ");
           Serial.print(message.header.length,DEC);
           Serial.print("  ");
-          for (int i=0;i<message.header.length;i++) {	
+          for (int i = 0; i < message.header.length; i++) {	
             Serial.print(message.data[i],HEX);
             Serial.print(" ");
           }
