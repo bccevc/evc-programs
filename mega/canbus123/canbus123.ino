@@ -25,19 +25,20 @@ Some snippets are from SparkFun_SerialLCD_Demo
 #define RXPIN 4
 #define TXPIN 5
 #define GPSBAUD 4800
-
+float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist, Power,EnergyUsed,MPGe; //saved long/lat
+float Constant = 121.32;
 SoftwareSerial uart_gps(RXPIN, TXPIN);
 void getgps(TinyGPS &gps);
 float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitude, float SavedLongitude);
 
 const int chipSelect = 9;
-float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist, Power,EnergyUsed,MPGe; //saved long/lat
-float Constant = 121.32;
 float SavedLongitude;
 float SavedLatitude;
-int timeStamp = millis();
-int CurrentTS,timeElps, SavedTS;
-float CEnergy=0;
+unsigned long timeStamp = millis(); 
+//change to micros test
+//int timeStamp = micros();
+unsigned long CurrentTS,timeElps, SavedTS;
+unsigned long CEnergy = 0;//changed to int //changed again to unsigned long
 
 SerLCD lcd;
 TinyGPS gps;
@@ -88,18 +89,40 @@ void setup() {
   Serial.println("       ...waiting for lock...           ");
   Serial.println("");
 
-  SavedTS = millis();
+  SavedTS = millis(); 
+  //change to micros test
+  //SavedTS = micros();
 }
 
 void loop() {
-  int timeStamp = millis();
+  unsigned long timeStamp = millis(); 
+  //change to micros test
+  //int timeStamp = micros();
 
   // Even if you aren't using GPS, you need to include this while loop if you've included the GPS functions
   while (Serial3.available()) {
     int c = Serial3.read();
+
     if (gps.encode(c)) {
       getgps(gps);
+      CurrentLatitude = latitude;//added
+      CurrentLongitude = longitude; //added
+      distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude); //added
+      Serial.print("distance = " );
+      Serial.print(distance,6);   
+      TotalDist = distance + TotalDist; 
+      Serial.print(" Trip: "); 
+      Serial.print(TotalDist,2); 
+      Serial.println();
+      lcd.setCursor(9,3);
+      lcd.print("TRIP:");
+      lcd.print(TotalDist,2);
+      Serial.println();
+      SavedLongitude = CurrentLongitude;
+      SavedLatitude = CurrentLatitude;
+
       tCAN message;
+
       if (mcp2515_check_message()) {
         if (mcp2515_get_message(&message)) {    
           Serial.print("ID: ");
@@ -119,8 +142,7 @@ void loop() {
           Serial.print(" Id ");             
           if (message.id == 0x03B) {
             // Print current to LCD
-            lcd.setCursor(0,2);
-            lcd.write("current:");        
+            lcd.setCursor(0,2);       
             int IDEC = 0; //Bob initialize IDEC to zero
             for (int i = 0; i < 2; i++) {
               Serial.print(message.data[i],HEX);
@@ -136,21 +158,27 @@ void loop() {
               Serial.print(" IDEC ");
             }
             lcd.print((float)IDEC/10,1); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
+            lcd.print("A"); 
             Serial.println("Final");
             
             // Print voltage to LCD
-            lcd.setCursor(0,3);  
-            lcd.write("voltage:"); //Bob display "voltage:" on second line
+            lcd.setCursor(6,2);  
             for (int i = 3; i < 4; i++) { // Gets rid of leading zero
               lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
+              lcd.print("V"); 
+              Power= (message.data[3],DEC)*((float)IDEC/10); // Voltage * Amps
+              Serial.print("Power:");
+              Serial.print(Power,4);
             }
-            delay(1000); // Remove if there's a second gap on timestamp?       
+            //  delay(1000); // Remove if there's a second gap on timestamp?       
             
             // Write timestamp, current, voltage to SD
             String dataString = "";    
             File dataFile = SD.open("datalog.txt", FILE_WRITE);
             if (dataFile) {  
-              int timeStamp = millis();
+              unsigned long timeStamp = millis(); 
+              //change to micros test
+              //int timeStamp = micros();
               int IDEC = 0;
               dataFile.print(timeStamp);
               dataFile.print(",");
@@ -166,6 +194,9 @@ void loop() {
               Serial.println("error opening datalog.txt");
             }
           }
+          else {
+            Serial.println("Not getting 03B message.");
+          }
 
           // Print battery temp, cell #, voltage to LCD
           if (message.id == 0x123) {
@@ -174,39 +205,41 @@ void loop() {
               int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
               CDEC = CDEC + (MDATA*(pow(256, 1-i))); // BOB changed "message.data[i]" to MDATA
             }
-            lcd.setCursor(10,1); 
+            lcd.setCursor(0,1); 
             lcd.print("BT:");
             lcd.print(message.data[3],DEC);
             lcd.print("C");
-            lcd.setCursor(0,1);
-            lcd.print("Cell#");
+            lcd.setCursor(17,1);
+            lcd.print("#");
             lcd.print(message.data[2],DEC);
-            // lcd.setCursor(7,3);
-            // lcd.print((float)CDEC/10000,3);
-            // lcd.print("v");
+            lcd.setCursor(13,2);
+            lcd.print((float)CDEC/10000,3);
+            lcd.print("v");
 
             // Write timestamp, cell #, voltage, battery temp to SD
             String dataString = "";    
             File dataFile = SD.open("datalog.txt", FILE_WRITE);
             if (dataFile) {  
-              int timeStamp = millis();
+              unsigned long timeStamp = millis(); 
+              //change to micros test
+              //int timeStamp = micros();
               dataFile.print(timeStamp);
               dataFile.print(",");
               dataFile.print(message.data[2],DEC);
               dataFile.print(",");
-              // dataFile.print((float)CDEC/10000,3);
-              // dataFile.print(",");
-              dataFile.print(message.data[3],DEC);                        
+                dataFile.print((float)CDEC/10000,3);
+                dataFile.print(",");
+              dataFile.print(message.data[3],DEC);                 
               dataFile.println();
               dataFile.println();
               dataFile.close();
               Serial.println();
             }
-            else {
-              Serial.println("Error opening datalog.txt (123 message)");
-            }
           }
         }
+      }
+      else {
+        Serial.println("Error getting canbus message.");
       }
     }
   }
@@ -224,7 +257,9 @@ void getgps(TinyGPS &gps) {
   String dataString = "";
   File dataFile = SD.open("datalog.txt", FILE_WRITE);
   if (dataFile) {  
-    int timeStamp = millis();
+    unsigned long timeStamp = millis(); 
+    //change to micros test
+    //int timeStamp = micros();
     //write to SD card
     dataFile.println();
     CurrentTS = timeStamp;
@@ -232,7 +267,10 @@ void getgps(TinyGPS &gps) {
     dataFile.print(" ms");
     dataFile.print(", ");
     //review Serial Monitor for debugging
-    timeElps= CurrentTS-SavedTS; 
+    timeElps= (CurrentTS-SavedTS); 
+    timeElps= (timeElps/1000); //ms to s
+    timeElps= (timeElps/60);   //s to m
+    timeElps= (timeElps/60);   //m to h
     Serial.print(" Timestamp: "); 
     Serial.print(timeStamp); 
     Serial.print(" CurrentTS: "); 
@@ -246,12 +284,12 @@ void getgps(TinyGPS &gps) {
     Serial.print (EnergyUsed);
     dataFile.print(" Energy Used: ");
     dataFile.print (EnergyUsed);
-    CEnergy= EnergyUsed + CEnergy;
+    CEnergy= (EnergyUsed) + CEnergy;
     Serial.print(" Cumulative Energy: ");
     Serial.println (CEnergy);
     dataFile.print(" Cumulative Energy:");
     dataFile.print(CEnergy);
-    if (CEnergy>0) { 
+    if (CEnergy > 0) { 
       MPGe = (TotalDist/CEnergy)*Constant;
       Serial.print(" C: ");
       Serial.println (Constant);
@@ -279,7 +317,7 @@ void getgps(TinyGPS &gps) {
     dataFile.print("/"); 
     dataFile.print(year);
     //Print time
-    int echour = hour - 5;
+    int echour = hour - 4;
     dataFile.print("  Time: "); 
     dataFile.print(echour, DEC); 
     dataFile.print(":"); 
@@ -318,7 +356,7 @@ void getgps(TinyGPS &gps) {
   Serial.print("/"); 
   Serial.print(year);
   // Print time
-  int echour = hour - 5;
+  int echour = hour - 4;
   Serial.print("  Time: "); 
   Serial.print(echour, DEC); 
   Serial.print(":"); 
@@ -329,7 +367,8 @@ void getgps(TinyGPS &gps) {
   Serial.println(hundredths, DEC);
   // Since month, day, hour, minute, second, and hundred
   // Functions for LCD
-  lcd.setCursor(0,0);
+  /*
+  lcd.setCursor(10,2);
   lcd.print(echour, DEC);
   lcd.print(":");
   lcd.print(minute, DEC);
@@ -338,13 +377,17 @@ void getgps(TinyGPS &gps) {
   //lcd.print(":");
   //lcd.print(hundredths, DEC);
   lcd.print(" ");
+  */
   //display speed
-  lcd.setCursor(0,1);
+  lcd.setCursor(0,0);
   //lcd.print("Speed:");
   lcd.print(gps.f_speed_mph());
-  lcd.print("Mph ");
+  lcd.print("MPH ");
   lcd.setCursor(8,1);
   lcd.print(" ");
+  lcd.setCursor(0,3);
+  lcd.print(CEnergy,3);
+  lcd.print("KWH"); 
   // Here you can print the altitude and course values directly since 
   // there is only one value for the function
   // Serial.print("Altitude (meters): "); Serial.println(gps.f_altitude());  
@@ -355,6 +398,11 @@ void getgps(TinyGPS &gps) {
   Serial.print("Speed(mph): "); 
   Serial.println(gps.f_speed_mph());
   // Serial.println();
+  //extra parameters
+  lcd.setCursor(9,0);
+  lcd.print("RPM:____");
+  lcd.setCursor(8,1);
+  lcd.print("MC:___C"); 
 }
 
 /*----------------------------------------------------------------------**

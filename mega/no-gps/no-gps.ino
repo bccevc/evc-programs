@@ -120,4 +120,7 @@ void loop() {
       }
     }
   }
+  else {
+    Serial.println("Error getting can message.");
+  }
 }
