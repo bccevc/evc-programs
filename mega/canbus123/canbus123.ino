@@ -25,7 +25,7 @@ Some snippets are from SparkFun_SerialLCD_Demo
 #define RXPIN 4
 #define TXPIN 5
 #define GPSBAUD 4800
-float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist, Power,EnergyUsed,MPGe; //saved long/lat
+float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist, Power,MPGe; //saved long/lat//energy used
 float Constant = 121.32;
 SoftwareSerial uart_gps(RXPIN, TXPIN);
 void getgps(TinyGPS &gps);
@@ -38,8 +38,8 @@ unsigned long timeStamp = millis();
 //change to micros test
 //int timeStamp = micros();
 unsigned long CurrentTS,timeElps, SavedTS;
-unsigned long CEnergy = 0;//changed to int //changed again to unsigned long
-
+double CEnergy ;//changed to int //changed again to int
+double EnergyUsed;//added
 SerLCD lcd;
 TinyGPS gps;
 
@@ -95,7 +95,7 @@ void setup() {
 }
 
 void loop() {
-  unsigned long timeStamp = millis(); 
+ unsigned long timeStamp = millis(); 
   //change to micros test
   //int timeStamp = micros();
 
@@ -157,6 +157,7 @@ void loop() {
               Serial.print(IDEC);
               Serial.print(" IDEC ");
             }
+            //print amps to display
             lcd.print((float)IDEC/10,1); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
             lcd.print("A"); 
             Serial.println("Final");
@@ -166,7 +167,9 @@ void loop() {
             for (int i = 3; i < 4; i++) { // Gets rid of leading zero
               lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
               lcd.print("V"); 
-              Power= (message.data[3],DEC)*((float)IDEC/10); // Voltage * Amps
+              //Power= (message.data[3],DEC)*((float)IDEC/10); // Voltage * Amps
+              Power= (message.data[3],DEC)*((float)IDEC/10,1); // Voltage * Amps
+              //Alex added ,1 to the amps, helped make kwh going too high
               Serial.print("Power:");
               Serial.print(Power,4);
             }
@@ -176,9 +179,10 @@ void loop() {
             String dataString = "";    
             File dataFile = SD.open("datalog.txt", FILE_WRITE);
             if (dataFile) {  
-              unsigned long timeStamp = millis(); 
+               unsigned long timeStamp = millis(); 
               //change to micros test
               //int timeStamp = micros();
+
               int IDEC = 0;
               dataFile.print(timeStamp);
               dataFile.print(",");
@@ -258,19 +262,27 @@ void getgps(TinyGPS &gps) {
   File dataFile = SD.open("datalog.txt", FILE_WRITE);
   if (dataFile) {  
     unsigned long timeStamp = millis(); 
-    //change to micros test
-    //int timeStamp = micros();
+    //Added lines 272-274
+    //timeStamp= (timeStamp/1000); //ms to s
+   // timeStamp= (timeStamp/60);   //s to m
+   // timeStamp= (timeStamp/60);   //m to h
+    //added 
+    long double  timeStampHr;
+    long double  timeStampmin;
+    long double  timeStampsec;
+    //timeStampHr = (((timeStamp/1000)/60)/60);
+    //timeStampmin = ((timeStamp/1000)/60);
+    timeStampsec = (timeStamp/1000);
+    timeStampsec = (timeStampsec/60);
+    timeStampsec = (timeStampsec/60);
     //write to SD card
     dataFile.println();
     CurrentTS = timeStamp;
+    timeElps = CurrentTS - SavedTS;
     dataFile.print(timeStamp);
     dataFile.print(" ms");
     dataFile.print(", ");
     //review Serial Monitor for debugging
-    timeElps= (CurrentTS-SavedTS); 
-    timeElps= (timeElps/1000); //ms to s
-    timeElps= (timeElps/60);   //s to m
-    timeElps= (timeElps/60);   //m to h
     Serial.print(" Timestamp: "); 
     Serial.print(timeStamp); 
     Serial.print(" CurrentTS: "); 
@@ -279,11 +291,12 @@ void getgps(TinyGPS &gps) {
     Serial.print(SavedTS);  
     Serial.print(" TimeElapsed: "); 
     Serial.print(timeElps);
-    EnergyUsed=(Power)*(timeElps);
+    SavedTS=CurrentTS;
+    EnergyUsed=(Power)*(timeStampsec);//need to divided by thousand for kwh
     Serial.print(" Energy Used: ");
-    Serial.print (EnergyUsed);
+    Serial.print (EnergyUsed,6);
     dataFile.print(" Energy Used: ");
-    dataFile.print (EnergyUsed);
+    dataFile.print (EnergyUsed,6);
     CEnergy= (EnergyUsed) + CEnergy;
     Serial.print(" Cumulative Energy: ");
     Serial.println (CEnergy);
