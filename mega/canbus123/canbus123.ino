@@ -25,8 +25,9 @@ Some snippets are from SparkFun_SerialLCD_Demo
 #define RXPIN 4
 #define TXPIN 5
 #define GPSBAUD 4800
-float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist, Power,MPGe; //saved long/lat//energy used
+float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist,Power, MPGe; //saved long/lat//energy used///power
 float Constant = 121.32;
+
 SoftwareSerial uart_gps(RXPIN, TXPIN);
 void getgps(TinyGPS &gps);
 float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitude, float SavedLongitude);
@@ -37,8 +38,9 @@ float SavedLatitude;
 unsigned long timeStamp = millis(); 
 //change to micros test
 //int timeStamp = micros();
-unsigned long CurrentTS,timeElps, SavedTS;
-double CEnergy ;//changed to int //changed again to int
+//unsigned long CurrentTS,timeElps, SavedTS;
+float CurrentTS,timeElps, SavedTS; //we need the decimals -Alex
+double CEnergy ;//changed to int //changed again to double
 double EnergyUsed;//added
 SerLCD lcd;
 TinyGPS gps;
@@ -89,7 +91,7 @@ void setup() {
   Serial.println("       ...waiting for lock...           ");
   Serial.println("");
 
-  SavedTS = millis(); 
+  SavedTS = millis();
   //change to micros test
   //SavedTS = micros();
 }
@@ -163,15 +165,26 @@ void loop() {
             Serial.println("Final");
             
             // Print voltage to LCD
-            lcd.setCursor(6,2);  
+            lcd.setCursor(7,2);  
             for (int i = 3; i < 4; i++) { // Gets rid of leading zero
               lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
               lcd.print("V"); 
               //Power= (message.data[3],DEC)*((float)IDEC/10); // Voltage * Amps
-              Power= (message.data[3],DEC)*((float)IDEC/10,1); // Voltage * Amps
-              //Alex added ,1 to the amps, helped make kwh going too high
-              Serial.print("Power:");
-              Serial.print(Power,4);
+              //changed [3] to [i] and removed DEC by Alex
+              //                      V   V
+              //Power= ((message.data[i],DEC)*((float)IDEC/10));
+              //             ampsV   message.data[i]
+              Power= (message.data[i])*((float)IDEC/10);
+              // Voltage * Amps
+              //Alex removed DEC from voltage, fixes error
+  
+              Serial.print("Amps:");
+              Serial.print((float)IDEC/10,1);
+              Serial.print("  Volts:");
+              Serial.print(message.data[i],DEC);
+              //added lines 176-179 to test power result 
+              Serial.print(" Power:");
+              Serial.print(Power);//
             }
             //  delay(1000); // Remove if there's a second gap on timestamp?       
             
@@ -198,10 +211,11 @@ void loop() {
               Serial.println("error opening datalog.txt");
             }
           }
+          /*
           else {
             Serial.println("Not getting 03B message.");
           }
-
+          */
           // Print battery temp, cell #, voltage to LCD
           if (message.id == 0x123) {
             int CDEC = 0; //Bob initialize IDEC to zero
@@ -264,21 +278,24 @@ void getgps(TinyGPS &gps) {
     unsigned long timeStamp = millis(); 
     //Added lines 272-274
     //timeStamp= (timeStamp/1000); //ms to s
-   // timeStamp= (timeStamp/60);   //s to m
-   // timeStamp= (timeStamp/60);   //m to h
+    //timeStamp= (timeStamp/60);   //s to m
+    //timeStamp= (timeStamp/60);   //m to h
     //added 
     long double  timeStampHr;
     long double  timeStampmin;
     long double  timeStampsec;
     //timeStampHr = (((timeStamp/1000)/60)/60);
     //timeStampmin = ((timeStamp/1000)/60);
-    timeStampsec = (timeStamp/1000);
-    timeStampsec = (timeStampsec/60);
-    timeStampsec = (timeStampsec/60);
+    //timeStampsec = (timeStamp/1000);
+    //timeStampsec = (timeStampsec/60);
+    //timeStampsec = (timeStampsec/60);
     //write to SD card
     dataFile.println();
     CurrentTS = timeStamp;
     timeElps = CurrentTS - SavedTS;
+    timeElps = timeElps/1000; //ms to s
+    timeElps = timeElps/60;   //s to m
+    timeElps = timeElps/60;   //m to hr
     dataFile.print(timeStamp);
     dataFile.print(" ms");
     dataFile.print(", ");
@@ -290,18 +307,20 @@ void getgps(TinyGPS &gps) {
     Serial.print(" SavedTS: "); 
     Serial.print(SavedTS);  
     Serial.print(" TimeElapsed: "); 
-    Serial.print(timeElps);
+    Serial.println(timeElps,4);
     SavedTS=CurrentTS;
-    EnergyUsed=(Power)*(timeStampsec);//need to divided by thousand for kwh
+    EnergyUsed=(Power)*(timeElps);
+    EnergyUsed= EnergyUsed/1000;
+    //need to divided by thousand for kwh
     Serial.print(" Energy Used: ");
     Serial.print (EnergyUsed,6);
     dataFile.print(" Energy Used: ");
     dataFile.print (EnergyUsed,6);
     CEnergy= (EnergyUsed) + CEnergy;
     Serial.print(" Cumulative Energy: ");
-    Serial.println (CEnergy);
+    Serial.println (CEnergy,4);
     dataFile.print(" Cumulative Energy:");
-    dataFile.print(CEnergy);
+    dataFile.println(CEnergy,4);
     if (CEnergy > 0) { 
       MPGe = (TotalDist/CEnergy)*Constant;
       Serial.print(" C: ");
