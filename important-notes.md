@@ -36,6 +36,8 @@ Use jumper wires to connect pins:
 ||H29 (HV2)|SCL|
 ||J27 to -27 (from the right)||
 
+## Photos
+
 # Notes on Connecting to the CAN-bus
 - When running programs, make sure the baud rates are the same as the CAN-bus via `CANSPEED_125`.
 
