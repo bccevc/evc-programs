@@ -1,6 +1,6 @@
 # Welcome!
 
-This is BCC's unofficial EVC Truck repository, where all of the files for instrumentation on the truck is stored.
+This is BCC's unofficial EVC Truck repository, where all of the files for instrumentation on the truck are stored.
 
 ***
 
