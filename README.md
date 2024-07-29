@@ -2,6 +2,8 @@
 
 This is BCC's unofficial EVC Truck repository, where all of the files for instrumentation on the truck are stored.
 
+<img src="./imgs/in-truck.png" alt="Arduino truck dashboard" width="700"/>
+
 ***
 
 # The File Tree
@@ -21,6 +23,8 @@ This is BCC's unofficial EVC Truck repository, where all of the files for instru
 - The GPS uses the UART serial communication protocol, and the LCD uses I2C.
 - The proto shield is used to help with wire management.
 
+![Hardware overview](./imgs/hardware-overview.png)
+
 ## List
 - Electrocookie Mega R3 Proto Shield
 - Arduino Mega
@@ -35,16 +39,18 @@ This is BCC's unofficial EVC Truck repository, where all of the files for instru
 
 ### Connecting the GPS
 
-There should be two cables on the GPS module that has male ends.
+Plug in the 5-wire connection to the GPS module and to the GPS port on the CAN-BUS Shield. Also, there should be two cables on the GPS module that has male ends soldered on.
 
-|GPS Module|Mega|
+|GPS Module|Proto Shield (or Mega)|
 |---|---|
-|Middle wire|Pin 14|
+|Third (middle) wire|Pin 14|
 |Second wire|Pin 15|
+
+<img src="./imgs/gps-wires.png" alt="Labeled image showing wires 1-5 on GPS module" width="700"/>
 
 ### Establishing the SD Card Connection
 
-Use jumper wires.
+If the prototyping shield isn't being used, the following are the pins you'd connect on the CAN-BUS and the Mega:
 
 | CAN-BUS | Mega |
 |---|---|
@@ -53,9 +59,20 @@ Use jumper wires.
 |11|51|
 |12|50|
 
+If the prototyping shield *is* being used, the following are the pins you'd connect with female-to-female jumper wires:
+
+| Proto Shield | Proto Shield |
+|---|---|
+|10|53|
+|13|52|
+|11|51|
+|12|50|
+
+<img src="./imgs/sd-card-proto-shield.png" alt="Proto shield wires showing SD card hookup" width="500"/>
+
 ### Connecting the LCD
 
-Reference this [hookup guide](https://learn.sparkfun.com/tutorials/avr-based-serial-enabled-lcds-hookup-guide/introduction) in general. To hook up the LCD for I2C, see this [part of the hookup guide](https://learn.sparkfun.com/tutorials/avr-based-serial-enabled-lcds-hookup-guide/i2c-hardware-hookup--example-code---basic). Here's the [diagram](https://cdn.sparkfun.com/assets/learn_tutorials/7/8/9/Fritzing_Arduino_SerLCD_I2C_bb.jpg).
+Reference this [hookup guide](https://learn.sparkfun.com/tutorials/avr-based-serial-enabled-lcds-hookup-guide/introduction) in general. To hook up the LCD for I2C, see this [part of the hookup guide](https://learn.sparkfun.com/tutorials/avr-based-serial-enabled-lcds-hookup-guide/i2c-hardware-hookup--example-code---basic). Here's the [diagram](https://cdn.sparkfun.com/assets/learn_tutorials/7/8/9/Fritzing_Arduino_SerLCD_I2C_bb.jpg). For some reason, the diagram doesn't include the connections for LCD GND and RAW, so we guessed those.
 
 | LCD | Breadboard | CAN-BUS |
 |---|---|---|
@@ -72,11 +89,9 @@ Reference this [hookup guide](https://learn.sparkfun.com/tutorials/avr-based-ser
 ||H29 (HV2)|SCL|
 ||J27 to -27 (from the right)||
 
-### Connections Between the Proto Shield and Mega
+Orient the Logic Level Converter as shown in the image below:
 
-|Proto Shield|Mega|
-|---|---|
-|||
+<img src="./imgs/lcd.png" alt="LCD hookup" width="700"/>
 
 ***
 
@@ -112,6 +127,8 @@ Reference this [hookup guide](https://learn.sparkfun.com/tutorials/avr-based-ser
 | **1** | B | T | : | x | x | x | C |  | M | C | : | x | x | x | C |  |  | \# | x | x |
 | **2** | x | x | x | A |  | x | x | x | . | x | V |  |  |  | x | . | x | x | x | V |
 | **3** | x | x | x | . | x | K | W | H |  | T | R | I | P | : | x | x | x | . | x |  |
+
+<img src="./imgs/lcd-layout-demo.png" alt="LCD layout demo" width="700"/>
 
 ## Connecting to the Battery Management System (BMS) on Arduino
 
