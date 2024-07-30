@@ -34,6 +34,7 @@ This is BCC's unofficial EVC Truck repository, where all of the files for instru
 - [SparkFun Bi-Directional Logic Level Converter](https://www.sparkfun.com/products/12009)
 - [Breadboard](https://www.sparkfun.com/products/12002)
 - Jumper wires
+- [Micro Center 128GB microSD Card](https://www.microcenter.com/product/659122/micro-center-128gb-microsdxc-card-class-10-uhs-i-c10-u1-flash-memory-card-with-adapter)
 
 ## Hookup Guidelines
 
