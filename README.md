@@ -26,27 +26,29 @@ This is BCC's unofficial EVC Truck repository, where all of the files for instru
 ![Hardware overview](./imgs/hardware-overview.png)
 
 ## List
-- Electrocookie Mega R3 Proto Shield
-- Arduino Mega
+- [Electrocookie Mega R3 Proto Shield](https://www.amazon.com/ElectroCookie-Arduino-Prototype-Stackable-Expansion/dp/B0841ZFP1C)
+- [Arduino Mega](https://store.arduino.cc/products/arduino-mega-2560-rev3)
 - [SparkFun CAN-BUS Shield](https://www.sparkfun.com/products/13262)
 - [SparkFun 20x4 SerLCD - RGB Backlight (Qwiic)](https://www.sparkfun.com/products/16398)
 - [SparkFun GPS Receiver EM-506](https://www.sparkfun.com/products/retired/12751?gad_source=1)
-- SparkFun Bi-Directional Logic Level Converter
-- Breadboard
+- [SparkFun Bi-Directional Logic Level Converter](https://www.sparkfun.com/products/12009)
+- [Breadboard](https://www.sparkfun.com/products/12002)
 - Jumper wires
 
 ## Hookup Guidelines
 
 ### Connecting the GPS
 
-Plug in the 5-wire connection to the GPS module and to the GPS port on the CAN-BUS Shield. Also, there should be two cables on the GPS module that has male ends soldered on.
+Plug in the 5-wire connection to the GPS module and to the GPS port on the CAN-BUS Shield. The second and the third wire should be stripped and have male ends soldered onto them, which is shown in the image below:
+
+<img src="./imgs/gps-wires.png" alt="Labeled image showing wires 1-5 on GPS module" width="700"/>
+
+The two wires should be connected to the appropriate pins:
 
 |GPS Module|Proto Shield (or Mega)|
 |---|---|
 |Third (middle) wire|Pin 14|
 |Second wire|Pin 15|
-
-<img src="./imgs/gps-wires.png" alt="Labeled image showing wires 1-5 on GPS module" width="700"/>
 
 ### Establishing the SD Card Connection
 
