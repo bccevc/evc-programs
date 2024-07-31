@@ -218,6 +218,7 @@ These can be modified on the BMS software.
 
 - [ ] Get RPM and motor controller temperature from the motor controller to display on LCD
 - [ ] Ensure that the data printed to the SD card is formatted properly
+- [ ] Radio or music player capabilities
 
 ***
 
