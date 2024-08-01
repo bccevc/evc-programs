@@ -245,8 +245,8 @@ void loop() {
               dataFile.print(",");
               dataFile.print(message.data[2],DEC);
               dataFile.print(",");
-                dataFile.print((float)CDEC/10000,3);
-                dataFile.print(",");
+              dataFile.print((float)CDEC/10000,3);
+              dataFile.print(",");
               dataFile.print(message.data[3],DEC);                 
               dataFile.println();
               dataFile.println();
