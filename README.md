@@ -113,11 +113,11 @@ Orient the Logic Level Converter as shown in the image below:
 |Lowest cell voltage ID|Y|BMS|
 |Kilowatt-hour|Y|BMS|
 |Trip (miles)|Y|GPS|
-|Time|-||
+|Time|-|-|
 |Latitude/Longitude|-|GPS|
 |Altitude (meters)|-|GPS|
 |Course (degrees)|-|GPS|
-|MPGe|-||
+|MPGe|-|BMS|
 |Power|-|BMS|
 
 ## LCD Layout
