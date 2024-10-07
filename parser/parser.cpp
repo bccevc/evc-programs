@@ -18,5 +18,9 @@ int main() {
     }
     inFile.close();
 
+    // Fields: timestamp (ms), energy used, cumulative energy, mpge, lat, long, trip, distance, date, time, course, speed
+    // timestamp (ms), current, voltage
+    // The first number is the timestamp; every time you hit a timestamp, everything before is saved
+
     return 0;
 }
