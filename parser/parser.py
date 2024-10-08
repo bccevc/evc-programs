@@ -5,8 +5,7 @@ filepath1 = "./parser/DATALOG.TXT"
 with open(filepath1, "r") as f:
     content = f.readlines()
 
-
-with open("./parser/outfile.txt", "w") as f:
+with open("./parser/current-voltage.txt", "w") as f:
     for line in content:
         match = re.search(r"(\d+),([\d.]+),([\d.]+)", line)
         if match:
@@ -15,6 +14,8 @@ with open("./parser/outfile.txt", "w") as f:
             voltage = match.group(3)
             f.write(f"{ms},{current},{voltage}\n\n")
 
+with open("./parser/outfile.txt", "w") as f:
+    for line in content:
         match = re.search(r"(\d+) ms,  Energy Used: ([\d.]+) Cumulative Energy:([\d.]+)", line)
         if match:
             ms = match.group(1)
