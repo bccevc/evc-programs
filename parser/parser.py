@@ -1,6 +1,6 @@
 import re
 
-filepath1 = "./parser/DATALOG.TXT"
+filepath1 = "./parser/2024-10-27-run.TXT"
 
 with open(filepath1, "r") as f:
     content = f.readlines()
