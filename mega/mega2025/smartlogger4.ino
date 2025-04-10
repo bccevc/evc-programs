@@ -46,16 +46,18 @@ String generateFileName(String prefix, String ext) {
 }
 
 void printCANMessage(tCAN message) {
-  Serial.print("📡 CAN ID: 0x");
+  Serial.print("CAN ID: 0x");
   Serial.print(message.id, HEX);
   Serial.print(" | Data: ");
-  for (int i = 0; i < message.length; i++) {
-    if (message.data[i] < 16) Serial.print("0");
+  for (int i = 0; i < message.header.length; i++) {
+    if (message.data[i] < 0x10) Serial.print("0");
     Serial.print(message.data[i], HEX);
     Serial.print(" ");
   }
   Serial.println();
 }
+
+
 
 void setup() {
   delay(2000);
