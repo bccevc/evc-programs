@@ -1,3 +1,8 @@
+// === Refined Arduino CAN Logger Using SparkFun CANbus.h ===
+// ✅ Now uses legacy working structure with Canbus.h + mcp2515_get_message()
+// ✅ Supports IDs: 0x03B, 0x3CB, 0x6B0, 0x123
+// ✅ Logs to SD, rotates LCD, and includes GPS distance + MPGe
+
 #include <Canbus.h>
 #include <defaults.h>
 #include <global.h>
@@ -11,10 +16,9 @@
 #include <SerLCD.h>
 #include <math.h>
 
-#define RXPIN 4
-#define TXPIN 5
+#define uart_gps Serial3
 #define GPSBAUD 4800
-#define SD_CS 9
+#define SD_CS 53
 
 // CAN IDs
 #define ID_VOLT_CURRENT 0x03B
@@ -22,7 +26,6 @@
 #define ID_MISC_FLAGS   0x6B0
 #define ID_LOW_CELL     0x123
 
-SoftwareSerial uart_gps(RXPIN, TXPIN);
 TinyGPS gps;
 SerLCD lcd;
 File logCsv;
