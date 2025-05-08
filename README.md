@@ -235,4 +235,17 @@ Maybe we remember or forgot something. We'll do our best to help. :)
 Marek: msolowiej225@gmail.com
 Omer: 16omerkilic@gmail.com
 
+Prof Roller updated access and privileges to give each of you "view" access to the BCC EV Truck Main Folder (and all its subfolders):
+https://drive.google.com/drive/folders/0B_5XGBhi8e8OR3Y3SXFwM1d3ODA?resourcekey=0-Csu1-YCIw7EOlhjci-3egQ&usp=drive_link
+
+Prof Roller also gave each of you "edit" privileges to the BCC EVC 2025 sub-folder (including all lower level folders) :
+https://drive.google.com/drive/folders/1Ohkeznx8yyZKjxn91wp-65J9ssRKBGQn?usp=drive_link
+
+Prof Roller created a sub-folder for the weekly logs:
+BCC EV Truck Main Folder>BCC EVC 2025>EVC Spring 2025>Logbooks
+Omer- please put your Arduino/Instrumentation logs here.
+We should start a log for the other work we are doing on the truck.
+
+
+
 
