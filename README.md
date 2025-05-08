@@ -230,3 +230,9 @@ Maybe we remember or forgot something. We'll do our best to help. :)
 - Alex: gutierrezale101@gmail.com
 - Fuzail: alifuzail5@gmail.com
 - Rebekah: rbkehan@gmail.com
+
+# From the Spring 2025 Team: Need Help?
+Marek: msolowiej225@gmail.com
+Omer: 16omerkilic@gmail.com
+
+
