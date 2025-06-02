@@ -36,6 +36,10 @@
 #include <mcp2515.h>        // Handles low-level MCP2515 CAN controller functions
 #include <mcp2515_defs.h>   // Definitions for MCP2515 registers and constants
 #include <SPI.h>            // SPI library for communication with MCP2515 chip
+#include <Wire.h>
+#include <SerLCD.h>
+
+
 
 // === Define a CAN message structure ===
 tCAN message; // This holds incoming CAN message data: ID, length, and 8 bytes of data

@@ -1,134 +1,479 @@
-/*
-  6-8-10
-  Aaron Weiss
-  SparkFun Electronics
-  
-  Example GPS Parser based off of arduiniana.org TinyGPS examples.
-  
-  Parses NMEA sentences from an EM406 running at 4800bps into readable 
-  values for latitude, longitude, elevation, date, time, course, and 
-  speed. 
-  
-  For the SparkFun GPS Shield. Make sure the switch is set to DLINE.
-  
-  Once you get your longitude and latitude you can paste your 
-  coordinates from the terminal window into Google Maps. Here is the 
-  link for SparkFun's location.  
-  http://maps.google.com/maps?q=40.06477,+-105.20997
-  
-  Uses the NewSoftSerial library for serial communication with your GPS, 
-  so connect your GPS TX and RX pin to any digital pin on the Arduino, 
-  just be sure to define which pins you are using on the Arduino to 
-  communicate with the GPS module. 
-  
-  REVISIONS:
-  1-17-11 
-    changed values to RXPIN = 2 and TXPIN = to correspond with
-    hardware v14+. Hardware v13 used RXPIN = 3 and TXPIN = 2.
-  
-*/ 
+/****************************************************************************
+CAN Read Demo for the SparkFun CAN Bus Shield. 
 
-// In order for this sketch to work, you will need to download 
-// TinyGPS library from arduiniana.org and put them 
-// into the hardware->libraries folder in your ardiuno directory.
-#include <SoftwareSerial.h>
+Written by Stephen McCoy. 
+Original tutorial available here: http://www.instructables.com/id/CAN-Bus-Sniffing-and-Broadcasting-with-Arduino
+Used with permission 2016. License CC By SA. 
+
+Distributed as-is; no warranty is given.
+
+Some snippets are from SparkFun_SerialLCD_Demo
+*************************************************************************/
+
+#include <Canbus.h>
+#include <defaults.h>
+#include <global.h>
+#include <mcp2515.h>
+#include <mcp2515_defs.h>
+#include <SPI.h>
+#include <SD.h>
+#include <Wire.h>
+#include <SerLCD.h>
 #include <TinyGPS.h>
+#include <SoftwareSerial.h> 
 
-// Define which pins you will use on the Arduino to communicate with your 
-// GPS. In this case, the GPS module's TX pin will connect to the 
-// Arduino's RXPIN which is pin 3.
 #define RXPIN 4
 #define TXPIN 5
-//Set this value equal to the baud rate of your GPS
 #define GPSBAUD 4800
+float longitude,latitude,CurrentLatitude,CurrentLongitude,distance,TotalDist,Power, MPGe; //saved long/lat//energy used///power
+float Constant = 121.32;
 
-// Create an instance of the TinyGPS object
-TinyGPS gps;
-// Initialize the NewSoftSerial library to the pins you defined above
 SoftwareSerial uart_gps(RXPIN, TXPIN);
-
-// This is where you declare prototypes for the functions that will be 
-// using the TinyGPS library.
 void getgps(TinyGPS &gps);
+float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitude, float SavedLongitude);
 
-// In the setup function, you need to initialize two serial ports; the 
-// standard hardware serial port (Serial()) to communicate with your 
-// terminal program an another serial port (NewSoftSerial()) for your 
-// GPS.
-void setup()
-{
+const int chipSelect = 9;
+float SavedLongitude;
+float SavedLatitude;
+unsigned long timeStamp = millis(); 
+//change to micros test
+//int timeStamp = micros();
+//unsigned long CurrentTS,timeElps, SavedTS;
+float CurrentTS,timeElps, SavedTS; //we need the decimals -Alex
+double CEnergy ;//changed to int //changed again to double
+double EnergyUsed;//added
+SerLCD lcd;
+TinyGPS gps;
+
+void setup() {
+  delay(500);
+  Serial.begin(115200); // For debug use
+  Serial.println("CAN Read - Testing receival of CAN Bus message");  
+  delay(1000);
+  
+  if (Canbus.init(CANSPEED_125)) {
+    Serial.println("CAN Init ok");
+  }
+  else {
+    Serial.println("Can't init CAN");
+  }
+    
+  delay(1000);
+  Wire.begin();
+  lcd.begin(Wire); 
+  Serial.print("Initializing SD card...");
+  // Make sure that the default chip select pin is set to output, even if you don't use it
+  pinMode(chipSelect, OUTPUT);
+  if (!SD.begin(chipSelect)) {
+    Serial.print("Card failed, or not present");
+    return;
+  }
+  Serial.print("card initialized.");
   // This is the serial rate for your terminal program. It must be this 
   // fast because we need to print everything before a new sentence 
   // comes in. If you slow it down, the messages might not be valid and 
   // you will likely get checksum errors.
-  Serial.begin(115200);
-  //Sets baud rate of your GPS
+
+  Serial3.begin(GPSBAUD);
+  Wire.begin();
+  lcd.begin(Wire);
+  Wire.setClock(400000); // Optional - set I2C SCL to High Speed Mode of 400kHz
+  lcd.clear();
+  lcd.cursor(); //Turn on the underline cursor
+ 
+  delay(500); // Wait for display to boot
+  
+  //Set GPS baud rate
   uart_gps.begin(GPSBAUD);
   
   Serial.println("");
   Serial.println("GPS Shield QuickStart Example Sketch v12");
   Serial.println("       ...waiting for lock...           ");
   Serial.println("");
+
+  SavedTS = millis();
+  //change to micros test
+  //SavedTS = micros();
 }
 
-// This is the main loop of the code. All it does is check for data on 
-// the RX pin of the ardiuno, makes sure the data is valid NMEA sentences, 
-// then jumps to the getgps() function.
-void loop()
-{
-  while(uart_gps.available())     // While there is data on the RX pin...
-  {
-      int c = uart_gps.read();    // load the data into a variable...
-      if(gps.encode(c))      // if there is a new valid sentence...
-      {
-        getgps(gps);         // then grab the data.
+void loop() {
+ unsigned long timeStamp = millis(); 
+  //change to micros test
+  //int timeStamp = micros();
+
+  // Even if you aren't using GPS, you need to include this while loop if you've included the GPS functions
+  while (Serial3.available()) {
+    int c = Serial3.read();
+
+    if (gps.encode(c)) {
+      getgps(gps);
+      CurrentLatitude = latitude;//added
+      CurrentLongitude = longitude; //added
+      distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude); //added
+      Serial.print("distance = " );
+      Serial.print(distance,6);   
+      TotalDist = distance + TotalDist; 
+      Serial.print(" Trip: "); 
+      Serial.print(TotalDist,2); 
+      Serial.println();
+      lcd.setCursor(10,3);
+      lcd.print("TRIP:");
+      lcd.print(TotalDist,2);
+      Serial.println();
+      SavedLongitude = CurrentLongitude;
+      SavedLatitude = CurrentLatitude;
+
+      tCAN message;
+
+      if (mcp2515_check_message()) {
+        if (mcp2515_get_message(&message)) {    
+          Serial.print("ID: ");
+          Serial.print(message.id,HEX);
+          Serial.print(", ");
+          Serial.print("Data: ");
+          Serial.print(message.header.length,DEC);
+          Serial.print("  ");
+          for (int i = 0; i < message.header.length; i++) {	
+            Serial.print(message.data[i],HEX);
+            Serial.print(" ");
+          }
+          Serial.println("");
+
+          // Print to LCD and write to SD
+          Serial.print(message.id,HEX);
+          Serial.print(" Id ");             
+          if (message.id == 0x03B) {
+            // Print current to LCD
+            lcd.setCursor(0,2);       
+            int IDEC = 0; //Bob initialize IDEC to zero
+            for (int i = 0; i < 2; i++) {
+              Serial.print(message.data[i],HEX);
+              Serial.print(" Hex "); 
+              // Serial.print(message.data[i],DEC);
+              int MDATA = (message.data[i]); ///LeahAna when we put a ",DEC" gives us constant DEC value of 10
+              Serial.print((float)MDATA/10,1);///LeahAna added this to add the decimal place
+              ///Serial.print(MDATA,DEC); 
+              Serial.print(" Dec "); 
+              // IDEC=IDEC+((message.data[i],DEC)* (pow(256, 1-i)));
+              IDEC=IDEC+(MDATA*(pow(256, 1-i))); ///BOB changed "message.data[i]" to MDATA
+              Serial.print(IDEC);
+              Serial.print(" IDEC ");
+            }
+            //print amps to display
+            lcd.print((float)IDEC/10,1); // LeahAna crossed out line below; aded the float and put IDEC instead of MDATA
+            lcd.print("A"); 
+            Serial.println("Final");
+            
+            // Print voltage to LCD
+            lcd.setCursor(7,2);  
+            for (int i = 3; i < 4; i++) { // Gets rid of leading zero
+              lcd.print(message.data[i],DEC); //LeahAna changed HEX to DEC
+              lcd.print("V"); 
+              //Power= (message.data[3],DEC)*((float)IDEC/10); // Voltage * Amps
+              //changed [3] to [i] and removed DEC by Alex
+              //                      V   V
+              //Power= ((message.data[i],DEC)*((float)IDEC/10));
+              //             ampsV   message.data[i]
+              Power= (message.data[i])*((float)IDEC/10);
+              // Voltage * Amps
+              //Alex removed DEC from voltage, fixes error
+  
+              Serial.print("Amps:");
+              Serial.print((float)IDEC/10,1);
+              Serial.print("  Volts:");
+              Serial.print(message.data[i],DEC);
+              //added lines 176-179 to test power result 
+              Serial.print(" Power:");
+              Serial.print(Power);//
+            }
+            //  delay(1000); // Remove if there's a second gap on timestamp?       
+            
+            // Write timestamp, current, voltage to SD
+            String dataString = "";    
+            File dataFile = SD.open("datalog.txt", FILE_WRITE);
+            if (dataFile) {  
+               unsigned long timeStamp = millis(); 
+              //change to micros test
+              //int timeStamp = micros();
+
+              int IDEC = 0;
+              dataFile.print(timeStamp);
+              dataFile.print(",");
+              dataFile.print((float)IDEC/10,1);
+              dataFile.print(",");
+              // int i=3;
+              dataFile.print(message.data[3],DEC); //originally calling i
+              dataFile.close();
+              delay(100); // Possibly remove if affects timestamp?
+              Serial.println();                   
+            }
+            else {
+              Serial.println("error opening datalog.txt");
+            }
+          }
+          //added below line since the 0x3B message doesn't show every iteration -Alex
+          else {
+            Serial.println("Wait for 0x3B message.");
+          }
+          
+          // Print battery temp, cell #, voltage to LCD
+          if (message.id == 0x123) {
+            int CDEC = 0; //Bob initialize IDEC to zero
+            for (int i = 0; i < 2; i++) { // Removed 2 and changed to 1 so it reads one byte
+              int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
+              CDEC = CDEC + (MDATA*(pow(256, 1-i))); // BOB changed "message.data[i]" to MDATA
+            }
+            lcd.setCursor(0,1); 
+            lcd.print("BT:");
+            lcd.print(message.data[3],DEC);
+            lcd.print("C");
+            lcd.setCursor(17,1);
+            lcd.print("#");
+            lcd.print(message.data[2],DEC);
+            lcd.setCursor(13,2);
+            lcd.print((float)CDEC/10000,3);
+            lcd.print("v");
+
+            // Write timestamp, cell #, voltage, battery temp to SD
+            String dataString = "";    
+            File dataFile = SD.open("datalog.txt", FILE_WRITE);
+            if (dataFile) {  
+              unsigned long timeStamp = millis(); 
+              //change to micros test
+              //int timeStamp = micros();
+              dataFile.print(timeStamp);
+              dataFile.print(",");
+              dataFile.print(message.data[2],DEC);
+              dataFile.print(",");
+              dataFile.print((float)CDEC/10000,3);
+              dataFile.print(",");
+              dataFile.print(message.data[3],DEC);                 
+              dataFile.println();
+              dataFile.println();
+              dataFile.close();
+              Serial.println();
+            }
+          }
+        }
       }
+      else {
+        Serial.println("Error getting canbus message.");
+      }
+    }
   }
 }
 
-// The getgps function will get and print the values we want.
-void getgps(TinyGPS &gps)
-{
-  // To get all of the data into varialbes that you can use in your code, 
-  // all you need to do is define variables and query the object for the 
-  // data. To see the complete list of functions see keywords.txt file in 
-  // the TinyGPS and NewSoftSerial libs.
-  
-  // Define the variables that will be used
-  float latitude, longitude;
-  // Then call this function
+void getgps(TinyGPS &gps) {
   gps.f_get_position(&latitude, &longitude);
-  // You can now print variables latitude and longitude
+  // Print variables latitude and longitude:
   Serial.print("Lat/Long: "); 
-  Serial.print(latitude,5); 
+  Serial.print(latitude,6); 
   Serial.print(", "); 
-  Serial.println(longitude,5);
-  
-  // Same goes for date and time
+  Serial.println(longitude,6);
+   // String for assembling the data to log:
+  String dataString = "";
+  File dataFile = SD.open("datalog.txt", FILE_WRITE);
+  if (dataFile) {  
+    unsigned long timeStamp = millis(); 
+    //Added
+    //timeStamp= (timeStamp/1000); //ms to s
+    //timeStamp= (timeStamp/60);   //s to m
+    //timeStamp= (timeStamp/60);   //m to h
+    //added 
+    long double  timeStampHr;
+    long double  timeStampmin;
+    long double  timeStampsec;
+    //timeStampHr = (((timeStamp/1000)/60)/60);
+    //timeStampmin = ((timeStamp/1000)/60);
+    //timeStampsec = (timeStamp/1000);
+    //write to SD card
+    dataFile.println();
+    CurrentTS = timeStamp;
+    timeElps = CurrentTS - SavedTS;
+    timeElps = timeElps/1000; //ms to s
+    timeElps = timeElps/60;   //s to m
+    timeElps = timeElps/60;   //m to hr
+    dataFile.print(timeStamp);
+    dataFile.print(" ms");
+    dataFile.print(", ");
+    //review Serial Monitor for debugging
+    Serial.print(" Timestamp: "); 
+    Serial.print(timeStamp); 
+    Serial.print(" CurrentTS: "); 
+    Serial.print(CurrentTS); 
+    Serial.print(" SavedTS: "); 
+    Serial.print(SavedTS);  
+    Serial.print(" TimeElapsed: "); 
+    Serial.println(timeElps,4);
+    SavedTS=CurrentTS;
+    EnergyUsed=(Power)*(timeElps);
+    EnergyUsed= EnergyUsed/1000;
+    //need to divided by thousand for kwh
+    Serial.print(" Energy Used: ");
+    Serial.print (EnergyUsed,6);
+    dataFile.print(" Energy Used: ");
+    dataFile.print (EnergyUsed,6);
+    CEnergy= (EnergyUsed) + CEnergy;
+    Serial.print(" Cumulative Energy: ");
+    Serial.println (CEnergy,4);
+    dataFile.print(" Cumulative Energy:");
+    dataFile.println(CEnergy,4);
+    if (CEnergy > 0) { 
+      MPGe = (TotalDist/CEnergy)*Constant;
+      Serial.print(" C: ");
+      Serial.println (Constant);
+      Serial.print(" MPGe: ");
+      Serial.println (MPGe,9);
+      dataFile.print("MPGe:");
+      dataFile.print(MPGe,9);
+    }
+    dataFile.print("Lat/Long: "); 
+    dataFile.print(latitude,5); 
+    dataFile.print(", ");
+    dataFile.print(longitude,5);
+    dataFile.print(" Trip:");
+    dataFile.print(TotalDist);
+    dataFile.print(" Distance:");
+    dataFile.print(distance);
+    int year;
+    byte month, day, hour, minute, second, hundredths;
+    gps.crack_datetime(&year,&month,&day,&hour,&minute,&second,&hundredths);
+    // Print date
+    dataFile.print(" Date: "); 
+    dataFile.print(month, DEC);
+    dataFile.print("/"); 
+    dataFile.print(day, DEC);
+    dataFile.print("/"); 
+    dataFile.print(year);
+    //Print time
+    int echour = hour - 4;
+    dataFile.print("  Time: "); 
+    dataFile.print(echour, DEC); 
+    dataFile.print(":"); 
+    dataFile.print(minute, DEC); 
+    dataFile.print(":"); 
+    dataFile.print(second, DEC); 
+    dataFile.print("."); 
+    dataFile.print(hundredths, DEC);
+    // Here you can print the altitude and course values directly since 
+    // there is only one value for the function
+    //dataFile.print("Altitude (meters): "); dataFile.println(gps.f_altitude());  
+    // Same in course:
+    dataFile.print(" Course (degrees): "); 
+    dataFile.print(gps.f_course()); 
+    // Same in speed:
+    dataFile.print(" Speed(mph): "); 
+    dataFile.print(gps.f_speed_mph());
+
+    dataFile.println();
+    dataFile.println();
+    dataFile.close();
+  } 
+  //Some stuff repeats, supposed to for else function
+  else { 
+    Serial.println("error opening datalog.txt");
+  } 
+
   int year;
   byte month, day, hour, minute, second, hundredths;
   gps.crack_datetime(&year,&month,&day,&hour,&minute,&second,&hundredths);
-  // Print data and time
-  Serial.print("Date: "); Serial.print(month, DEC); Serial.print("/"); 
-  Serial.print(day, DEC); Serial.print("/"); Serial.print(year);
-  Serial.print("  Time: "); Serial.print(hour, DEC); Serial.print(":"); 
-  Serial.print(minute, DEC); Serial.print(":"); Serial.print(second, DEC); 
-  Serial.print("."); Serial.println(hundredths, DEC);
-  //Since month, day, hour, minute, second, and hundr
-  
+  // Print date
+  Serial.print("Date: "); 
+  Serial.print(month, DEC); 
+  Serial.print("/"); 
+  Serial.print(day, DEC); 
+  Serial.print("/"); 
+  Serial.print(year);
+  // Print time
+  int echour = hour - 4;
+  Serial.print("  Time: "); 
+  Serial.print(echour, DEC); 
+  Serial.print(":"); 
+  Serial.print(minute, DEC); 
+  Serial.print(":"); 
+  Serial.print(second, DEC); 
+  Serial.print("."); 
+  Serial.println(hundredths, DEC);
+  // Since month, day, hour, minute, second, and hundred
+  // Functions for LCD
+  /*
+  lcd.setCursor(10,2);
+  lcd.print(echour, DEC);
+  lcd.print(":");
+  lcd.print(minute, DEC);
+  lcd.print(":");
+  lcd.print(second, DEC);
+  //lcd.print(":");
+  //lcd.print(hundredths, DEC);
+  lcd.print(" ");
+  */
+  //display speed
+  lcd.setCursor(0,0);
+  //lcd.print("Speed:");
+  lcd.print(gps.f_speed_mph());
+  lcd.print("MPH ");
+  lcd.setCursor(8,1);
+  lcd.print(" ");
+  lcd.setCursor(0,3);
+  lcd.print(CEnergy,3);
+  lcd.print("KWH"); 
   // Here you can print the altitude and course values directly since 
   // there is only one value for the function
-  Serial.print("Altitude (meters): "); Serial.println(gps.f_altitude());  
-  // Same goes for course
-  Serial.print("Course (degrees): "); Serial.println(gps.f_course()); 
+  // Serial.print("Altitude (meters): "); Serial.println(gps.f_altitude());  
+  // Same in course
+  Serial.print("Course (degrees): "); 
+  Serial.println(gps.f_course()); 
   // And same goes for speed
-  Serial.print("Speed(kmph): "); Serial.println(gps.f_speed_kmph());
-  Serial.println();
-  
-  // Here you can print statistics on the sentences.
-  unsigned long chars;
-  unsigned short sentences, failed_checksum;
-  gps.stats(&chars, &sentences, &failed_checksum);
-  //Serial.print("Failed Checksums: ");Serial.print(failed_checksum);
-  //Serial.println(); Serial.println();
+  Serial.print("Speed(mph): "); 
+  Serial.println(gps.f_speed_mph());
+  // Serial.println();
+  //extra parameters
+  lcd.setCursor(9,0);
+  lcd.print("RPM:____");
+  lcd.setCursor(8,1);
+  lcd.print("MC:___C"); 
+}
+
+/*----------------------------------------------------------------------**
+**     Haversine Formula                                                **
+** (from R. W. Sinnott, "Virtues of the Haversine," Sky and Telescope,  **
+** vol. 68, no. 2, 1984, p. 159):                                       **
+**                                                                      **
+**   dLon = lon2 - lon1                                                 **
+**   dLat = lat2 - lat1                                                 **
+**   a = (sin(dlat/2))^2 + cos(lat1) * cos(lat2) * (sin(dlon/2))^2      **
+**   c = 2 * atan2(sqrt(a), sqrt(1-a))                                  **
+**   d = R * c                                                          **
+**                                                                      **
+** will give mathematically and computationally exact results. The      **
+** intermediate result c is the great circle distance in radians. The   **
+** great circle distance d will be in the same units as R.              **
+**----------------------------------------------------------------------*/
+
+float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitude, float SavedLongitude) {
+  // HaverSine version
+  const float Deg2Rad = 0.01745329252;               
+    // (PI/180)  0.017453293, 0.0174532925
+    //const double EarthRadius = 6372.795;              
+    //6372.7976 In Kilo meters, will scale to other values
+  const double EarthRadius = 3961;              
+    // In Miles 3956
+    //const float EarthRadius = 20908120.1;              
+    // In feet  20908128.6
+  float DeltaLatitude, DeltaLongitude, a, Distance;
+  if (SavedLongitude==0 ||SavedLatitude==0) {
+    SavedLongitude = CurrentLongitude;
+    SavedLatitude = CurrentLatitude;  
+  }
+  // degrees to radians
+  CurrentLatitude = (CurrentLatitude + 180) * Deg2Rad;     
+  // Remove negative offset (0-360), convert to RADS
+  CurrentLongitude = (CurrentLongitude + 180) * Deg2Rad;
+  SavedLatitude = (SavedLatitude + 180) * Deg2Rad;
+  SavedLongitude = (SavedLongitude + 180) * Deg2Rad;
+  DeltaLatitude = SavedLatitude - CurrentLatitude;
+  DeltaLongitude = SavedLongitude - CurrentLongitude;
+  a =(sin(DeltaLatitude/2) * sin(DeltaLatitude/2)) + cos(CurrentLatitude) * cos(SavedLatitude) * (sin(DeltaLongitude/2) * sin(DeltaLongitude/2));
+  Distance = EarthRadius * (2 * atan2(sqrt(a),sqrt(1-a)));
+  return(Distance);
 }
