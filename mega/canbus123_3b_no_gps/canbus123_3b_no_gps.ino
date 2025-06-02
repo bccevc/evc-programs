@@ -192,9 +192,9 @@ void loop() {
           //added below line since the 0x3B message doesn't show every iteration -Alex    
           // Print battery temp, cell #, voltage to LCD
           if (message.id == 0x123) {
-            int CDEC = 0; //Bob initialize IDEC to zero
+            unsigned int CDEC = 0; //Bob initialize IDEC to zero
             for (int i = 0; i < 2; i++) { // Removed 2 and changed to 1 so it reads one byte
-              int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
+              unsigned int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
               CDEC = CDEC + (MDATA*(pow(256, 1-i))); // BOB changed "message.data[i]" to MDATA
             }
             lcd.setCursor(0,1); 
@@ -287,7 +287,3 @@ void loop() {
         Serial.println("Error getting canbus message.");
         }
 }
-
-
-
-

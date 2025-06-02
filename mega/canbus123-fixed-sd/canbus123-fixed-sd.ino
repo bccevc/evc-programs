@@ -1,5 +1,5 @@
 /****************************************************************************
-CAN Read Demo for the SparkFun CAN Bus Shield. LALALA
+CAN Read Demo for the SparkFun CAN Bus Shield. 
 
 Written by Stephen McCoy. 
 Original tutorial available here: http://www.instructables.com/id/CAN-Bus-Sniffing-and-Broadcasting-with-Arduino
@@ -198,11 +198,12 @@ void loop() {
 
               int IDEC = 0;
               dataFile.print(timeStamp);
-              dataFile.print(",");
+              dataFile.print(",,,,,,,,,,,,");
               dataFile.print((float)IDEC/10,1);
               dataFile.print(",");
               // int i=3;
               dataFile.print(message.data[3],DEC); //originally calling i
+              dataFile.println();
               dataFile.close();
               delay(100); // Possibly remove if affects timestamp?
               Serial.println();                   
@@ -219,17 +220,10 @@ void loop() {
           // Print battery temp, cell #, voltage to LCD
           if (message.id == 0x123) {
             unsigned int CDEC = 0; //Bob initialize IDEC to zero
-            Serial.println("ID: 123");
-            for (int i = 0; i < 2; i++) { 
-              Serial.print(message.data[i]);
-              unsigned int MDATA = message.data[i];
-              Serial.print((float)MDATA/10,1);
-              CDEC = CDEC + (MDATA*(pow(256, 1-i)));
-              Serial.print("CDEC = ");
-              Serial.println(CDEC, DEC); 
+            for (int i = 0; i < 2; i++) { // Removed 2 and changed to 1 so it reads one byte
+              unsigned int MDATA = (message.data[i]); // LeahAna when we put a ",DEC" gives us constant DEC value of 10
+              CDEC = CDEC + (MDATA*(pow(256, 1-i))); // BOB changed "message.data[i]" to MDATA
             }
-            Serial.print("CDEC = ");
-            Serial.println(CDEC, DEC);
             lcd.setCursor(0,1); 
             lcd.print("BT:");
             lcd.print(message.data[3],DEC);
@@ -249,13 +243,12 @@ void loop() {
               //change to micros test
               //int timeStamp = micros();
               dataFile.print(timeStamp);
-              dataFile.print(",");
+              dataFile.print(",,,,,,,,,,,,,,");
               dataFile.print(message.data[2],DEC);
               dataFile.print(",");
               dataFile.print((float)CDEC/10000,3);
               dataFile.print(",");
               dataFile.print(message.data[3],DEC);                 
-              dataFile.println();
               dataFile.println();
               dataFile.close();
               Serial.println();
@@ -294,15 +287,13 @@ void getgps(TinyGPS &gps) {
     //timeStampmin = ((timeStamp/1000)/60);
     //timeStampsec = (timeStamp/1000);
     //write to SD card
-    dataFile.println();
     CurrentTS = timeStamp;
     timeElps = CurrentTS - SavedTS;
     timeElps = timeElps/1000; //ms to s
     timeElps = timeElps/60;   //s to m
     timeElps = timeElps/60;   //m to hr
     dataFile.print(timeStamp);
-    dataFile.print(" ms");
-    dataFile.print(", ");
+    dataFile.print(",");
     //review Serial Monitor for debugging
     Serial.print(" Timestamp: "); 
     Serial.print(timeStamp); 
@@ -318,43 +309,42 @@ void getgps(TinyGPS &gps) {
     //need to divided by thousand for kwh
     Serial.print(" Energy Used: ");
     Serial.print (EnergyUsed,6);
-    dataFile.print(" Energy Used: ");
     dataFile.print (EnergyUsed,6);
+    dataFile.print(",");
     CEnergy= (EnergyUsed) + CEnergy;
     Serial.print(" Cumulative Energy: ");
     Serial.println (CEnergy,4);
-    dataFile.print(" Cumulative Energy:");
-    dataFile.println(CEnergy,4);
+    dataFile.print(CEnergy,4);
+    dataFile.print(",");
     if (CEnergy > 0) { 
       MPGe = (TotalDist/CEnergy)*Constant;
       Serial.print(" C: ");
       Serial.println (Constant);
       Serial.print(" MPGe: ");
       Serial.println (MPGe,9);
-      dataFile.print("MPGe:");
       dataFile.print(MPGe,9);
     }
-    dataFile.print("Lat/Long: "); 
-    dataFile.print(latitude,5); 
-    dataFile.print(", ");
+    dataFile.print(",");
+    dataFile.print(latitude,5);
+    dataFile.print(",");
     dataFile.print(longitude,5);
-    dataFile.print(" Trip:");
+    dataFile.print(",");
     dataFile.print(TotalDist);
-    dataFile.print(" Distance:");
+    dataFile.print(",");
     dataFile.print(distance);
+    dataFile.print(",");
     int year;
     byte month, day, hour, minute, second, hundredths;
     gps.crack_datetime(&year,&month,&day,&hour,&minute,&second,&hundredths);
     // Print date
-    dataFile.print(" Date: "); 
     dataFile.print(month, DEC);
     dataFile.print("/"); 
     dataFile.print(day, DEC);
     dataFile.print("/"); 
     dataFile.print(year);
+    dataFile.print(","); 
     //Print time
     int echour = hour - 4;
-    dataFile.print("  Time: "); 
     dataFile.print(echour, DEC); 
     dataFile.print(":"); 
     dataFile.print(minute, DEC); 
@@ -362,17 +352,15 @@ void getgps(TinyGPS &gps) {
     dataFile.print(second, DEC); 
     dataFile.print("."); 
     dataFile.print(hundredths, DEC);
+    dataFile.print(","); 
     // Here you can print the altitude and course values directly since 
     // there is only one value for the function
     //dataFile.print("Altitude (meters): "); dataFile.println(gps.f_altitude());  
     // Same in course:
-    dataFile.print(" Course (degrees): "); 
     dataFile.print(gps.f_course()); 
+    dataFile.print(","); 
     // Same in speed:
-    dataFile.print(" Speed(mph): "); 
     dataFile.print(gps.f_speed_mph());
-
-    dataFile.println();
     dataFile.println();
     dataFile.close();
   } 
