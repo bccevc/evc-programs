@@ -196,13 +196,13 @@ void loop() {
               //change to micros test
               //int timeStamp = micros();
 
-              int IDEC = 0;
+              // int IDEC = 0;
               dataFile.print(timeStamp);
               dataFile.print(",,,,,,,,,,,,");
-              dataFile.print((float)IDEC/10,1);
+              dataFile.print((float)IDEC/10,1); // Print pack current
               dataFile.print(",");
               // int i=3;
-              dataFile.print(message.data[3],DEC); //originally calling i
+              dataFile.print(message.data[3],DEC); //originally calling i; Print pack voltage
               dataFile.println();
               dataFile.close();
               delay(100); // Possibly remove if affects timestamp?
