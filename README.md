@@ -215,6 +215,30 @@ These can be modified on the BMS software.
 
 ***
 
+# Exporting Data into an Excel File
+When taking the .txt file and importing it into an Excel spreadsheet, the following columns correspond to the following data labels:
+|Column|Data Label|
+|---|---|
+|A|Timestamp|
+|B|kwh (Energy Used)|
+|C|Cumulative Energy|
+|D|MPGe|
+|E|Lat|
+|F|Long|
+|G|Trip|
+|H|Distance|
+|I|Date|
+|J|Time|
+|K|Course (deg)|
+|L|Speed (mph)|
+|M|Current (A)|
+|N|Pack voltage (V)|
+|O|Lowest Cell ID|
+|P|Lowest Cell Voltage|
+|Q|Battery Temperture|
+
+***
+
 # Todo
 
 - [ ] Get RPM and motor controller temperature from the motor controller to display on LCD
