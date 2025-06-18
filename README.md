@@ -273,7 +273,7 @@ We should start a log for the other work we are doing on the truck.
 ***
 
 # Summer 2025 Todo List
-- [ ] Reformat SD card to be CSV-ready (what column corresponds to what metric was documented)
+- [x] Reformat SD card to be CSV-ready (what column corresponds to what metric was documented)
 - [ ] Build another instrumentation set
 - [ ] Rewire instrumentation hardware to be more robust
 - [ ] Write more helpful error messages (what canbus message isn't being delivered)
