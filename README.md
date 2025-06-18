@@ -274,11 +274,15 @@ We should start a log for the other work we are doing on the truck.
 
 # Summer 2025 Todo List
 - [x] Reformat SD card to be CSV-ready (what column corresponds to what metric was documented)
+    - [ ] Integrate with BMS data
 - [ ] Build another instrumentation set
 - [ ] Rewire instrumentation hardware to be more robust
 - [ ] Write more helpful error messages (what canbus message isn't being delivered)
 - [ ] Check why Arduino seems to only display A & V when plugged into IDE
 - [ ] Create new output file every time Arduino is started (new trial)
+- [ ] Integrate CANbus with Motor Controller
+- [ ] Process more data from Motor Controller
 - [ ] Log power from grid during charging (power meter)
+- [ ] Seatbelt indicator
 
 
