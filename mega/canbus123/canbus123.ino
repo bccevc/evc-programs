@@ -461,9 +461,10 @@ float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitud
     //const float EarthRadius = 20908120.1;              
     // In feet  20908128.6
   float DeltaLatitude, DeltaLongitude, a, Distance;
-  if (SavedLongitude==0 ||SavedLatitude==0) {
+
+  if (SavedLongitude == 0 || SavedLatitude == 0) {
     SavedLongitude = CurrentLongitude;
-    SavedLatitude = CurrentLatitude;  
+    SavedLatitude = CurrentLatitude;  Distance
   }
   // degrees to radians
   CurrentLatitude = (CurrentLatitude + 180) * Deg2Rad;     
@@ -473,7 +474,8 @@ float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitud
   SavedLongitude = (SavedLongitude + 180) * Deg2Rad;
   DeltaLatitude = SavedLatitude - CurrentLatitude;
   DeltaLongitude = SavedLongitude - CurrentLongitude;
-  a =(sin(DeltaLatitude/2) * sin(DeltaLatitude/2)) + cos(CurrentLatitude) * cos(SavedLatitude) * (sin(DeltaLongitude/2) * sin(DeltaLongitude/2));
+  a = (sin(DeltaLatitude/2) * sin(DeltaLatitude/2)) + cos(CurrentLatitude) * cos(SavedLatitude) * (sin(DeltaLongitude/2) * sin(DeltaLongitude/2));
   Distance = EarthRadius * (2 * atan2(sqrt(a),sqrt(1-a)));
-  return(Distance);
+
+  return Distance;
 }
