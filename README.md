@@ -273,6 +273,8 @@ We should start a log for the other work we are doing on the truck.
 ***
 
 # Summer 2025 Todo List
+View our [task list on Notion](https://www.notion.so/Summer-2025-EVC-Roadmaps-2194de854f2880d3a5c7fc3b522357bb?source=copy_link).
+
 - [x] Reformat SD card to be CSV-ready (what column corresponds to what metric was documented)
     - [ ] Integrate with BMS data
 - [ ] Build another instrumentation set
