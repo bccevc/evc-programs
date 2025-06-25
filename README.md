@@ -277,6 +277,8 @@ View our [task list on Notion](https://www.notion.so/Summer-2025-EVC-Roadmaps-21
 
 - [x] Reformat SD card to be CSV-ready (what column corresponds to what metric was documented)
     - [ ] Integrate with BMS data
+- [x] Test accuracy of trip
+    - Trip on the instrumentation seems to be off by 0.01-0.05 miles in the beginning. Our car's odometer ended at 4.7 miles. The Arduino ended at 4.84 miles. We left the instrumentation on standby, where it was on but it was left in the car for a period of time, reflecting standby on the test runs.
 - [ ] Build another instrumentation set
 - [ ] Rewire instrumentation hardware to be more robust
 - [ ] Write more helpful error messages (what canbus message isn't being delivered)

@@ -113,7 +113,7 @@ void loop() {
       Serial.print("distance = " );
       Serial.print(distance,6);   
       TotalDist = distance + TotalDist; 
-      Serial.print(" Trip: "); 
+      Serial.print("TRIP: "); 
       Serial.print(TotalDist,2); 
       Serial.println();
       lcd.setCursor(10,3);
@@ -253,6 +253,9 @@ void loop() {
               dataFile.close();
               Serial.println();
             }
+          }
+          else {
+
           }
         }
       }
@@ -414,14 +417,14 @@ void getgps(TinyGPS &gps) {
   lcd.print("KWH"); 
   // Here you can print the altitude and course values directly since 
   // there is only one value for the function
-  // Serial.print("Altitude (meters): "); Serial.println(gps.f_altitude());  
-  // Same in course
+  Serial.print("Altitude (meters): "); Serial.println(gps.f_altitude());  
+  Same in course
   Serial.print("Course (degrees): "); 
   Serial.println(gps.f_course()); 
   // And same goes for speed
   Serial.print("Speed(mph): "); 
   Serial.println(gps.f_speed_mph());
-  // Serial.println();
+  Serial.println();
   //extra parameters
   lcd.setCursor(9,0);
   lcd.print("RPM:____");
