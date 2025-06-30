@@ -97,21 +97,19 @@ void setup() {
 }
 
 void loop() {
- unsigned long timeStamp = millis(); 
-  //change to micros test
-  //int timeStamp = micros();
+ unsigned long timeStamp = millis();  // Save current timestamp
 
   // Even if you aren't using GPS, you need to include this while loop if you've included the GPS functions
-  while (Serial3.available()) {
-    int c = Serial3.read();
+  while (Serial3.available()) { // While there is data on Serial3
+    int c = Serial3.read(); // Store data from Serial3
 
-    if (gps.encode(c)) {
+    if (gps.encode(c)) { // Decode GPS message
       getgps(gps);
-      CurrentLatitude = latitude;//added
-      CurrentLongitude = longitude; //added
-      distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude); //added
-      Serial.print("distance = " );
-      Serial.print(distance,6);   
+      CurrentLatitude = latitude;
+      CurrentLongitude = longitude;
+      distance = calcDist(CurrentLatitude, CurrentLongitude, SavedLatitude, SavedLongitude); // Calculate distance since last time
+      Serial.print("distance = " ); // Print distance to Serial Monitor
+      Serial.print(distance, 6);   
       TotalDist = distance + TotalDist; 
       Serial.print("TRIP: "); 
       Serial.print(TotalDist,2); 
@@ -268,28 +266,20 @@ void loop() {
 
 void getgps(TinyGPS &gps) {
   gps.f_get_position(&latitude, &longitude);
-  // Print variables latitude and longitude:
+  // Print latitude and longitude to Serial Monitor
   Serial.print("Lat/Long: "); 
   Serial.print(latitude,6); 
   Serial.print(", "); 
   Serial.println(longitude,6);
-   // String for assembling the data to log:
+  // String for assembling the data to log:
   String dataString = "";
   File dataFile = SD.open("datalog.txt", FILE_WRITE);
   if (dataFile) {  
     unsigned long timeStamp = millis(); 
-    //Added
-    //timeStamp= (timeStamp/1000); //ms to s
-    //timeStamp= (timeStamp/60);   //s to m
-    //timeStamp= (timeStamp/60);   //m to h
-    //added 
     long double  timeStampHr;
     long double  timeStampmin;
     long double  timeStampsec;
-    //timeStampHr = (((timeStamp/1000)/60)/60);
-    //timeStampmin = ((timeStamp/1000)/60);
-    //timeStampsec = (timeStamp/1000);
-    //write to SD card
+    // Write timestamp to SD
     CurrentTS = timeStamp;
     timeElps = CurrentTS - SavedTS;
     timeElps = timeElps/1000; //ms to s
@@ -297,7 +287,7 @@ void getgps(TinyGPS &gps) {
     timeElps = timeElps/60;   //m to hr
     dataFile.print(timeStamp);
     dataFile.print(",");
-    //review Serial Monitor for debugging
+    // Print to Serial Monitor
     Serial.print(" Timestamp: "); 
     Serial.print(timeStamp); 
     Serial.print(" CurrentTS: "); 
@@ -418,7 +408,7 @@ void getgps(TinyGPS &gps) {
   // Here you can print the altitude and course values directly since 
   // there is only one value for the function
   Serial.print("Altitude (meters): "); Serial.println(gps.f_altitude());  
-  Same in course
+  //Same in course
   Serial.print("Course (degrees): "); 
   Serial.println(gps.f_course()); 
   // And same goes for speed
