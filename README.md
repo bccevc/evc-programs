@@ -4,18 +4,18 @@ This is BCC's unofficial EVC Truck repository, where all of the files for instru
 
 <img src="./imgs/in-truck.png" alt="Arduino truck dashboard" width="700"/>
 
+The most up-to-date sketch we're working on is labeled `goated.ino`. 🐐
+
 ***
 
 # The File Tree
 
-- `arduino-libraries` contains a couple of the library files used for the Arduino Mega. This is just for reference. Honestly, this might not even be necessary at this point.
 - `data` contains the data files of our test runs.
 - `docs` contains important documents or manuals.
-- `i2c-gps-programs` contains code for the Arduino Mega and UNO to display text on the LCD (using the I2C communication protocol) while getting GPS data (which uses UART serial).
 - `imgs` contains images that are displayed on this document.
-- `mega` contains code for the Arduino Mega.
-    - `canbus123` is the most recent program as of summer 2024 for the truck.
-- `test-programs` contains basic programs to demonstrate the basic functionality of the hardware.
+- `libraries` contains a couple of the library files used for the Arduino Mega. This is just for reference. Honestly, this might not even be necessary at this point.
+- `parser` contains the script used to extract information from the generated output file. This will no longer be in use as the main sketch now outputs a comma-delimited file.
+- `sketches` contains all of the Arduino sketches made.
 
 ***
 
