@@ -444,7 +444,7 @@ float calcDist(float CurrentLatitude, float CurrentLongitude, float SavedLatitud
     // (PI/180)  0.017453293, 0.0174532925
     //const double EarthRadius = 6372.795;              
     //6372.7976 In Kilo meters, will scale to other values
-  const double EarthRadius = 3961;              
+  const double EarthRadius = 3961;          
     // In Miles 3956
     //const float EarthRadius = 20908120.1;              
     // In feet  20908128.6
