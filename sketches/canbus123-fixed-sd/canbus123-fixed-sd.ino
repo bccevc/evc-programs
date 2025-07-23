@@ -312,7 +312,7 @@ void getgps(TinyGPS &gps) {
     if (CEnergy > 0) { 
       MPGe = (TotalDist/CEnergy)*Constant;
       Serial.print(" C: ");
-      Serial.println (Constant);
+      Serial.println(Constant);
       Serial.print(" MPGe: ");
       Serial.println (MPGe,9);
       dataFile.print(MPGe,9);

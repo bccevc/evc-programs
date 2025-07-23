@@ -16,11 +16,11 @@
 
 // Global variables
 unsigned long timeStamp;
-float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, currentLongitude, currentLatitude, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed;
+float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, currentLongitude, currentLatitude, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed, packVoltage = 0.0;
 float lowestCellVoltageOutput = 0.0; // Needs to be implicitly declared as a float, is initially processed as an unsigned int
 int year, lowestCellID;
 byte month, day, hour, minute, second, hundredths;
-unsigned int packVoltage = 0, lowestCellVoltage = 0;
+unsigned int lowestCellVoltage = 0;
 double energyUsed = 0.0, cumulativeEnergy = 0.0;
 TinyGPS gps;
 SerLCD lcd;
@@ -81,7 +81,7 @@ void loop() {
     }
   }
   
-  // Get CAN bus messages as global
+  // Get CAN bus messages
   tCAN message;
   if (mcp2515_check_message()) {
     if (mcp2515_get_message(&message)) {
@@ -95,11 +95,8 @@ void loop() {
           packCurrent /= 10;
         }
         // Get pack voltage - is being sent as 2 bytes
-        for (int i = 2; i < 4; i++) {
-          unsigned int tmpByte = message.data[i];
-          packVoltage = tmpByte * 10;
-        }
-        // packVoltage = ((unsigned int)message.data[2] << 8) | message.data[3];
+        packVoltage = ((unsigned int)message.data[2] << 8) | message.data[3];
+        packVoltage /= 10; // Must be done separately to get the decimal value
       }
       // Get battery temp, lowest cell ID, lowest cell voltage
       if (message.id == 0x123) {
@@ -129,7 +126,7 @@ void loop() {
   // Compute power
   power = packVoltage * packCurrent;
 
-  // Compute energy used over an elapsed time (deltaTime)
+  // Compute energy used over an elapsed time (deltaTime) to compute cumulative energy
   deltaTime = timeStamp - savedTimestamp;
   savedTimestamp = timeStamp;
   // Convert deltaTime to hours from ms
@@ -269,7 +266,7 @@ void printToSD() {
     outFile.print(":");
     outFile.print(second);
     outFile.print(".");
-    outFile.println(hundredths);
+    outFile.print(hundredths);
     outFile.print(",");
     outFile.print(course);
     outFile.print(",");
