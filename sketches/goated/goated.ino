@@ -16,9 +16,8 @@
 
 // Global variables
 unsigned long timeStamp;
-float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, currentLongitude, currentLatitude, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed, packVoltage = 0.0;
-float lowestCellVoltageOutput = 0.0; // Needs to be implicitly declared as a float, is initially processed as an unsigned int
-int year, lowestCellID;
+float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed, packVoltage = 0.0, lowestCellVoltageOutput = 0.0; // lowestCellVoltageOutut needs to be implicitly declared as a float, is initially processed as an unsigned int
+int year, lowestCellID, packSOC;
 byte month, day, hour, minute, second, hundredths;
 unsigned int lowestCellVoltage = 0;
 double energyUsed = 0.0, cumulativeEnergy = 0.0;
@@ -32,7 +31,7 @@ const float MPGE_CONSTANT = 121.32;
 // Function prototypes
 SoftwareSerial uart_gps(RXPIN, TXPIN);
 void getGPS(TinyGPS &gps);
-float calcDist(float currentLatitude, float currentLongitude, float savedLatitude, float savedLongitude);
+float calcDist(float latitude, float longitude, float &savedLatitude, float &savedLongitude);
 void printToSerialMonitor();
 void printToSD();
 void printToLCD();
@@ -78,75 +77,78 @@ void loop() {
     int c = Serial3.read(); // Store data from Serial3
     if (gps.encode(c)) { // Decode GPS message
       getGPS(gps);
+
+      // Compute distance
+      distance = calcDist(latitude, longitude, savedLatitude, savedLongitude);
+      Serial.print("Distance: ");
+      Serial.println(distance, 6);
+      
+      // Compute trip
+      trip = trip + distance;
+
+      // Get CAN bus messages
+      tCAN message;
+      if (mcp2515_check_message()) {
+        if (mcp2515_get_message(&message)) {
+          // Wait to get data to prevent using stale data
+          // Get pack current, pack voltage
+          if (message.id == 0x03B) {
+            // Get pack current - unsure of the logic here
+            for (int i = 0; i < 2; i++) {
+              int tmpByte = message.data[i];
+              packCurrent = tmpByte * (pow(256, 1 - i));
+              packCurrent /= 10;
+            }
+            // Get pack voltage - is being sent as 2 bytes
+            packVoltage = ((unsigned int)message.data[2] << 8) | message.data[3];
+            packVoltage /= 10; // Must be done separately to get the decimal value
+          }
+          // Get battery temp, lowest cell ID, lowest cell voltage
+          if (message.id == 0x123) {
+            lowestCellVoltage = 0;
+            for (int i = 0; i < 2; i++) {
+              unsigned int tmpByte = message.data[i];
+              lowestCellVoltage = lowestCellVoltage + (tmpByte * (pow(256, 1 - i)));
+            }
+            lowestCellID = message.data[2];
+            batteryTemp = message.data[3];
+          }
+          // Get pack SOC
+          if (message.id == 0x6B0) {
+            packSOC = message.data[1];
+          }
+        }
+      }
+      // Intermediate conversions for pack voltage and lowest cell voltage
+      packVoltage /= 1.0;
+      lowestCellVoltageOutput = lowestCellVoltage / 10000.0;
+
+      // Compute power
+      power = packVoltage * packCurrent;
+
+      // Compute energy used over an elapsed time (deltaTime) to compute cumulative energy
+      deltaTime = timeStamp - savedTimestamp;
+      savedTimestamp = timeStamp;
+      // Convert deltaTime to hours from ms
+      deltaTime /= 1000; // ms to seconds
+      deltaTime /= 60; // seconds to minutes
+      deltaTime /= 60; // minutes to hours
+      energyUsed = (power * deltaTime) / 1000; // In kwh
+
+      // Compute cumulative energy
+      cumulativeEnergy = energyUsed + cumulativeEnergy;
+
+      // Compute MPGe
+      if (cumulativeEnergy > 0) {
+        mpge = (trip / cumulativeEnergy) * MPGE_CONSTANT;
+      }
+      
+      // Write all data to console, SD, LCD
+      printToSerialMonitor();
+      printToSD();
+      printToLCD();
     }
   }
-  
-  // Get CAN bus messages
-  tCAN message;
-  if (mcp2515_check_message()) {
-    if (mcp2515_get_message(&message)) {
-      // Wait to get data to prevent using stale data
-      // Get pack current, pack voltage
-      if (message.id == 0x03B) {
-        // Get pack current - unsure of the logic here
-        for (int i = 0; i < 2; i++) {
-          int tmpByte = message.data[i];
-          packCurrent = tmpByte * (pow(256, 1 - i));
-          packCurrent /= 10;
-        }
-        // Get pack voltage - is being sent as 2 bytes
-        packVoltage = ((unsigned int)message.data[2] << 8) | message.data[3];
-        packVoltage /= 10; // Must be done separately to get the decimal value
-      }
-      // Get battery temp, lowest cell ID, lowest cell voltage
-      if (message.id == 0x123) {
-        lowestCellVoltage = 0;
-        for (int i = 0; i < 2; i++) {
-          unsigned int tmpByte = message.data[i];
-          lowestCellVoltage = lowestCellVoltage + (tmpByte * (pow(256, 1 - i)));
-        }
-        lowestCellID = message.data[2];
-        batteryTemp = message.data[3];
-      }
-    }
-  }
-
-  // Intermediate conversions for pack voltage and lowest cell voltage
-  packVoltage /= 1.0;
-  lowestCellVoltageOutput = lowestCellVoltage / 10000.0;
-
-  // Compute distance
-  currentLatitude = latitude;
-  currentLongitude = longitude;
-  distance = calcDist(currentLatitude, currentLongitude, savedLatitude, savedLongitude);
-  
-  // Compute trip
-  trip = trip + distance;
-
-  // Compute power
-  power = packVoltage * packCurrent;
-
-  // Compute energy used over an elapsed time (deltaTime) to compute cumulative energy
-  deltaTime = timeStamp - savedTimestamp;
-  savedTimestamp = timeStamp;
-  // Convert deltaTime to hours from ms
-  deltaTime /= 1000; // ms to seconds
-  deltaTime /= 60; // seconds to minutes
-  deltaTime /= 60; // minutes to hours
-  energyUsed = (power * deltaTime) / 1000; // In kwh
-
-  // Compute cumulative energy
-  cumulativeEnergy = energyUsed + cumulativeEnergy;
-
-  // Compute MPGe
-  if (cumulativeEnergy > 0) {
-    mpge = (trip / cumulativeEnergy) * MPGE_CONSTANT;
-  }
-  
-  // Write all data to console, SD, LCD
-  printToSerialMonitor();
-  printToSD();
-  printToLCD();
 }
 
 void getGPS(TinyGPS &gps) {
@@ -158,24 +160,44 @@ void getGPS(TinyGPS &gps) {
 }
 
 // calcDist() uses the Haversine formula
-float calcDist(float currentLatitude, float currentLongitude, float savedLatitude, float savedLongitude) {
+float calcDist(float latitude, float longitude, float &savedLatitude, float &savedLongitude) {
   // const float DEG_TO_RAD = 0.01745329252;               
-  const double EARTH_RADIUS = 3963.1;          
+  const float EARTH_RADIUS = 3963.1906;          
   float deltaLatitude, deltaLongitude, a, distance;
   if (savedLongitude == 0 || savedLatitude == 0) {
-    savedLongitude = currentLongitude;
-    savedLatitude = currentLatitude;  
+    savedLongitude = longitude;
+    savedLatitude = latitude;
   }
+  Serial.println("-----------------------");
+
+  Serial.print("Saved Latitude: ");
+  Serial.println(savedLatitude, 6);
+  Serial.print("Saved Longitude: ");
+  Serial.println(savedLongitude, 6);
+
+  Serial.print("Latitude: ");
+  Serial.println(latitude, 6);
+  Serial.print("Longitude: ");
+  Serial.println(longitude, 6);
+
+  Serial.println("-----------------------");
+
   // Convert degrees to radians
-  currentLatitude = (currentLatitude + 180) * DEG_TO_RAD;     
+  float tmpLat = (latitude + 180) * DEG_TO_RAD;   
   // Remove negative offset (0-360), convert to RADS
-  currentLongitude = (currentLongitude + 180) * DEG_TO_RAD;
+  float tmpLong = (longitude + 180) * DEG_TO_RAD;
   savedLatitude = (savedLatitude + 180) * DEG_TO_RAD;
   savedLongitude = (savedLongitude + 180) * DEG_TO_RAD;
-  deltaLatitude = savedLatitude - currentLatitude;
-  deltaLongitude = savedLongitude - currentLongitude;
-  a = (sin(deltaLatitude / 2) * sin(deltaLatitude / 2)) + cos(currentLatitude) * cos(savedLatitude) * (sin(deltaLongitude / 2) * sin(deltaLongitude / 2));
+  deltaLatitude = savedLatitude - tmpLat;
+  Serial.print("deltalatitude:: ");
+  Serial.println(deltaLatitude, 6);
+
+  deltaLongitude = savedLongitude - tmpLong;
+  Serial.print("deltalongitude:: ");
+  Serial.println(deltaLongitude, 6);
+  a = (sin(deltaLatitude / 2) * sin(deltaLatitude / 2)) + cos(tmpLat) * cos(savedLatitude) * (sin(deltaLongitude / 2) * sin(deltaLongitude / 2));
   distance = EARTH_RADIUS * (2 * atan2(sqrt(a), sqrt(1 - a)));
+  
   return distance;
 }
 
@@ -187,10 +209,10 @@ void printToSerialMonitor() {
   Serial.print(course);
   Serial.print(" | ");
   Serial.print("Latitude: ");
-  Serial.print(latitude);
+  Serial.print(latitude, 4);
   Serial.print(" | ");
   Serial.print("Longitude: ");
-  Serial.print(longitude);
+  Serial.print(longitude, 4);
   Serial.print(" | ");
   Serial.print("Altitude: ");
   Serial.print(altitude);
@@ -213,34 +235,37 @@ void printToSerialMonitor() {
   Serial.print(".");
   Serial.println(hundredths);
   // CAN bus messages
-  Serial.print("Pack current: ");
-  Serial.print(packCurrent, 1);
-  Serial.print(" | ");
-  Serial.print("Pack voltage: ");
-  Serial.print(packVoltage, 1);
-  Serial.print(" | ");
-  Serial.print("Battery temp: ");
-  Serial.print(batteryTemp);
-  Serial.print(" | ");
-  Serial.print("Lowest cell ID: ");
-  Serial.print(lowestCellID);
-  Serial.print(" | ");
-  Serial.print("Lowest cell voltage: ");
-  Serial.println(lowestCellVoltageOutput, 3);
-  // Print computed values
+  // Serial.print("Pack current: ");
+  // Serial.print(packCurrent, 1);
+  // Serial.print(" | ");
+  // Serial.print("Pack voltage: ");
+  // Serial.print(packVoltage, 1);
+  // Serial.print(" | ");
+  // Serial.print("Battery temp: ");
+  // Serial.print(batteryTemp);
+  // Serial.print(" | ");
+  // Serial.print("Lowest cell ID: ");
+  // Serial.print(lowestCellID);
+  // Serial.print(" | ");
+  // Serial.print("Lowest cell voltage: ");
+  // Serial.print(lowestCellVoltageOutput, 3);
+  // Serial.print(" | ");
+  // Serial.print("Pack SOC: ");
+  // Serial.println(packSOC);
+  // // Print computed values
   Serial.print("Distance: ");
   Serial.println(distance, 6);
   Serial.print("Trip: ");
   Serial.println(trip, 2);
-  Serial.print("Power: ");
-  Serial.println(power);
-  Serial.print("Energy used: ");
-  Serial.println(energyUsed, 6);
-  Serial.print("Cumulative energy: ");
-  Serial.println(cumulativeEnergy, 4);
-  Serial.print("MPGe: ");
-  Serial.println(mpge, 9);
-  Serial.println();
+  // Serial.print("Power: ");
+  // Serial.println(power);
+  // Serial.print("Energy used: ");
+  // Serial.println(energyUsed, 6);
+  // Serial.print("Cumulative energy: ");
+  // Serial.println(cumulativeEnergy, 4);
+  // Serial.print("MPGe: ");
+  // Serial.println(mpge, 9);
+  // Serial.println();
 }
 
 void printToSD() {
@@ -291,6 +316,8 @@ void printToSD() {
     outFile.print(cumulativeEnergy, 4);
     outFile.print(",");
     outFile.print(mpge, 9);
+    outFile.print(",");
+    outFile.print(packSOC);
     outFile.println();
   }
   outFile.close();
