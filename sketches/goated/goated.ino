@@ -16,17 +16,17 @@
 
 // Global variables
 unsigned long timeStamp;
-float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed, packVoltage = 0.0, lowestCellVoltageOutput = 0.0; // lowestCellVoltageOutut needs to be implicitly declared as a float, is initially processed as an unsigned int
+float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed, packVoltage = 0.0, lowestCellVoltageOutput = 0.0, motorTemp, motorControllerTemp; // lowestCellVoltageOutut needs to be implicitly declared as a float, is initially processed as an unsigned int
 int year, lowestCellID, packSOC;
 byte month, day, hour, minute, second, hundredths;
-unsigned int lowestCellVoltage = 0;
+unsigned int lowestCellVoltage = 0, rpm = 0;
 double energyUsed = 0.0, cumulativeEnergy = 0.0;
 TinyGPS gps;
 SerLCD lcd;
 
 // Constant variables
 const int CHIPSELECT = 9;
-const float MPGE_CONSTANT = 121.32;
+const float MPGE_CONSTANT = 33.705; // This is in KWH
 
 // Function prototypes
 SoftwareSerial uart_gps(RXPIN, TXPIN);
@@ -80,8 +80,6 @@ void loop() {
 
       // Compute distance
       distance = calcDist(latitude, longitude, savedLatitude, savedLongitude);
-      Serial.print("Distance: ");
-      Serial.println(distance, 6);
       
       // Compute trip
       trip = trip + distance;
@@ -117,6 +115,12 @@ void loop() {
           if (message.id == 0x6B0) {
             packSOC = message.data[1];
           }
+          // Get RPM, Motor Temp, Motor Controller Temp (print to output) from Motor Controller
+          if (message.id == 0x601) {
+            rpm = ((unsigned int)message.data[0] << 8) | message.data[1];
+            motorTemp = message.data[2];
+            motorControllerTemp = message.data[3];
+          }
         }
       }
       // Intermediate conversions for pack voltage and lowest cell voltage
@@ -136,7 +140,7 @@ void loop() {
       energyUsed = (power * deltaTime) / 1000; // In kwh
 
       // Compute cumulative energy
-      cumulativeEnergy = energyUsed + cumulativeEnergy;
+      cumulativeEnergy += energyUsed;
 
       // Compute MPGe
       if (cumulativeEnergy > 0) {
@@ -161,42 +165,34 @@ void getGPS(TinyGPS &gps) {
 
 // calcDist() uses the Haversine formula
 float calcDist(float latitude, float longitude, float &savedLatitude, float &savedLongitude) {
-  // const float DEG_TO_RAD = 0.01745329252;               
   const float EARTH_RADIUS = 3963.1906;          
   float deltaLatitude, deltaLongitude, a, distance;
+
   if (savedLongitude == 0 || savedLatitude == 0) {
     savedLongitude = longitude;
     savedLatitude = latitude;
   }
-  Serial.println("-----------------------");
-
-  Serial.print("Saved Latitude: ");
-  Serial.println(savedLatitude, 6);
-  Serial.print("Saved Longitude: ");
-  Serial.println(savedLongitude, 6);
-
-  Serial.print("Latitude: ");
-  Serial.println(latitude, 6);
-  Serial.print("Longitude: ");
-  Serial.println(longitude, 6);
-
-  Serial.println("-----------------------");
 
   // Convert degrees to radians
-  float tmpLat = (latitude + 180) * DEG_TO_RAD;   
-  // Remove negative offset (0-360), convert to RADS
+  float tmpLat = (latitude + 180) * DEG_TO_RAD;
   float tmpLong = (longitude + 180) * DEG_TO_RAD;
   savedLatitude = (savedLatitude + 180) * DEG_TO_RAD;
   savedLongitude = (savedLongitude + 180) * DEG_TO_RAD;
-  deltaLatitude = savedLatitude - tmpLat;
-  Serial.print("deltalatitude:: ");
-  Serial.println(deltaLatitude, 6);
 
+  deltaLatitude = savedLatitude - tmpLat;
   deltaLongitude = savedLongitude - tmpLong;
-  Serial.print("deltalongitude:: ");
-  Serial.println(deltaLongitude, 6);
+
   a = (sin(deltaLatitude / 2) * sin(deltaLatitude / 2)) + cos(tmpLat) * cos(savedLatitude) * (sin(deltaLongitude / 2) * sin(deltaLongitude / 2));
   distance = EARTH_RADIUS * (2 * atan2(sqrt(a), sqrt(1 - a)));
+
+  // Update global variables
+  savedLatitude = latitude;
+  savedLongitude = longitude;
+
+  // Threshold value so that when idling, trip doesn't accumulate
+  if (distance < 0.002) {
+    distance = 0;
+  }
   
   return distance;
 }
@@ -235,42 +231,53 @@ void printToSerialMonitor() {
   Serial.print(".");
   Serial.println(hundredths);
   // CAN bus messages
-  // Serial.print("Pack current: ");
-  // Serial.print(packCurrent, 1);
-  // Serial.print(" | ");
-  // Serial.print("Pack voltage: ");
-  // Serial.print(packVoltage, 1);
-  // Serial.print(" | ");
-  // Serial.print("Battery temp: ");
-  // Serial.print(batteryTemp);
-  // Serial.print(" | ");
-  // Serial.print("Lowest cell ID: ");
-  // Serial.print(lowestCellID);
-  // Serial.print(" | ");
-  // Serial.print("Lowest cell voltage: ");
-  // Serial.print(lowestCellVoltageOutput, 3);
-  // Serial.print(" | ");
-  // Serial.print("Pack SOC: ");
-  // Serial.println(packSOC);
+  // BMS
+  Serial.print("Pack current: ");
+  Serial.print(packCurrent, 1);
+  Serial.print(" | ");
+  Serial.print("Pack voltage: ");
+  Serial.print(packVoltage, 1);
+  Serial.print(" | ");
+  Serial.print("Battery temp: ");
+  Serial.print(batteryTemp);
+  Serial.print(" | ");
+  Serial.print("Lowest cell ID: ");
+  Serial.print(lowestCellID);
+  Serial.print(" | ");
+  Serial.print("Lowest cell voltage: ");
+  Serial.print(lowestCellVoltageOutput, 3);
+  Serial.print(" | ");
+  Serial.print("Pack SOC: ");
+  Serial.print(packSOC);
+  // Motor Controller
+  Serial.print(" | ");
+  Serial.print("RPM: ");
+  Serial.print(rpm);
+  Serial.print(" | ");
+  Serial.print("Motor Temp: ");
+  Serial.print(motorTemp);
+  Serial.print(" | ");
+  Serial.print("MC Temp: ");
+  Serial.println(motorControllerTemp);
   // // Print computed values
   Serial.print("Distance: ");
   Serial.println(distance, 6);
   Serial.print("Trip: ");
   Serial.println(trip, 2);
-  // Serial.print("Power: ");
-  // Serial.println(power);
-  // Serial.print("Energy used: ");
-  // Serial.println(energyUsed, 6);
-  // Serial.print("Cumulative energy: ");
-  // Serial.println(cumulativeEnergy, 4);
-  // Serial.print("MPGe: ");
-  // Serial.println(mpge, 9);
-  // Serial.println();
+  Serial.print("Power: ");
+  Serial.println(power);
+  Serial.print("Energy used: ");
+  Serial.println(energyUsed, 6);
+  Serial.print("Cumulative energy: ");
+  Serial.println(cumulativeEnergy, 4);
+  Serial.print("MPGe: ");
+  Serial.println(mpge, 9);
+  Serial.println();
 }
 
 void printToSD() {
   File outFile = SD.open("output.txt", FILE_WRITE);
-  // Print lat, long, date, time, course, speed, distance, trip, pack current, pack voltage, lowest cell ID, lowest cell voltage, battery temperature, energy used, cumulative energy, mpge
+  // Print lat, long, date, time, course, speed, distance, trip, pack current, pack voltage, lowest cell ID, lowest cell voltage, battery temperature, energy used, cumulative energy, mpge, SOC, RPM, motor temp, motor controller temp
   if (outFile) {
     outFile.print(timeStamp);
     outFile.print(",");
@@ -318,50 +325,71 @@ void printToSD() {
     outFile.print(mpge, 9);
     outFile.print(",");
     outFile.print(packSOC);
+    outFile.print(",");
+    outFile.print(rpm);
+    outFile.print(",");
+    outFile.print(motorTemp);
+    outFile.print(",");
+    outFile.print(motorControllerTemp);
     outFile.println();
   }
   outFile.close();
 }
 
 void printToLCD() {
-  lcd.setCursor(10,3);
-  lcd.print("TRIP:");
-  lcd.print(trip, 2);
+  // First row
+  lcd.setCursor(0, 0);
+  lcd.print(speed, 1);
+  lcd.print("MPH ");
 
-  lcd.setCursor(0,2); 
-  lcd.print(packCurrent, 1);
-  lcd.print("A");
+  lcd.setCursor(8, 0);
+  lcd.print(rpm); // For int types, you cannot specify a decimal place. Otherwise, the LCD blows up.
+  lcd.print("RPM"); 
 
-  lcd.setCursor(7,2);
+  lcd.setCursor(16, 0);
+  lcd.print(motorTemp, 0);
+  lcd.print("MT");
+
+  // Second row
+  lcd.setCursor(0, 1);
   lcd.print(packVoltage, 1);
   lcd.print("V");
 
-  lcd.setCursor(0,1);
-  lcd.print("BT:");
-  lcd.print(batteryTemp);
-  lcd.print("C");
+  lcd.setCursor(7, 1); 
+  lcd.print(packCurrent, 1);
+  lcd.print("A");
 
-  lcd.setCursor(17,1);
-  lcd.print("#");
-  lcd.print(lowestCellID);
-
-  lcd.setCursor(13,2);
-  lcd.print(lowestCellVoltageOutput, 3);
-  lcd.print("v");
-
-  lcd.setCursor(0, 0);
-  lcd.print(speed);
-  lcd.print("MPH ");
+  lcd.setCursor(15, 1);
+  lcd.print(packSOC);
+  lcd.print("%");
 
   lcd.setCursor(8, 1);
   lcd.print(" ");
 
-  lcd.setCursor(0, 3);
-  lcd.print(cumulativeEnergy, 3);
-  lcd.print("KWH");
+  // Third row
+  lcd.setCursor(0, 2);
+  lcd.print("LOW#");
+  lcd.setCursor(4, 2);
+  lcd.print(lowestCellID);
+  lcd.setCursor(6, 2);
+  lcd.print("@");
+  lcd.print(lowestCellVoltageOutput, 3);
+  lcd.print("V");
 
-  lcd.setCursor(9, 0);
-  lcd.print("RPM:____");
-  lcd.setCursor(8, 1);
-  lcd.print("MC:___C"); 
+  lcd.setCursor(16, 2);
+  lcd.print(batteryTemp, 0);
+  lcd.print("BT");
+
+  // Fourth row
+  lcd.setCursor(8, 3);
+  lcd.print(trip, 1);
+  lcd.print("MI");
+
+  lcd.setCursor(0, 3);
+  lcd.print(cumulativeEnergy, 1);
+  lcd.print("KWH");
+  
+  lcd.setCursor(15, 3);
+  lcd.print(motorControllerTemp, 0);
+  lcd.print("MCT");
 }
