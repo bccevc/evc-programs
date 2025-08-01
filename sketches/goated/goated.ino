@@ -363,9 +363,6 @@ void printToLCD() {
   lcd.print(packSOC);
   lcd.print("%");
 
-  lcd.setCursor(8, 1);
-  lcd.print(" ");
-
   // Third row
   lcd.setCursor(0, 2);
   lcd.print("LOW#");
