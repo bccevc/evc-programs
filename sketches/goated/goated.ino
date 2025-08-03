@@ -17,7 +17,7 @@
 // Global variables
 unsigned long timeStamp;
 float longitude, latitude, course, mph, altitude, packCurrent = 0.0, batteryTemp = 0.0, distance, savedLatitude, savedLongitude, trip, deltaTime, savedTimestamp, mpge = 0.0, power, speed, packVoltage = 0.0, lowestCellVoltageOutput = 0.0, motorTemp, motorControllerTemp; // lowestCellVoltageOutut needs to be implicitly declared as a float, is initially processed as an unsigned int
-int year, lowestCellID, packSOC;
+int year, lowestCellID, packSOC, isMoving = 0;
 byte month, day, hour, minute, second, hundredths;
 unsigned int lowestCellVoltage = 0, rpm = 0;
 double energyUsed = 0.0, cumulativeEnergy = 0.0;
@@ -192,6 +192,10 @@ float calcDist(float latitude, float longitude, float &savedLatitude, float &sav
   // Threshold value so that when idling, trip doesn't accumulate
   if (distance < 0.002) {
     distance = 0;
+    isMoving = 0;
+  }
+  else {
+    isMoving = 1;
   }
   
   return distance;
@@ -259,7 +263,7 @@ void printToSerialMonitor() {
   Serial.print(" | ");
   Serial.print("MC Temp: ");
   Serial.println(motorControllerTemp);
-  // // Print computed values
+  // Print computed values
   Serial.print("Distance: ");
   Serial.println(distance, 6);
   Serial.print("Trip: ");
@@ -318,6 +322,8 @@ void printToSD() {
     outFile.print(",");
     outFile.print(batteryTemp);
     outFile.print(",");
+    outFile.print(power);
+    outFile.print(",");
     outFile.print(energyUsed, 6);
     outFile.print(",");
     outFile.print(cumulativeEnergy, 4);
@@ -331,6 +337,8 @@ void printToSD() {
     outFile.print(motorTemp);
     outFile.print(",");
     outFile.print(motorControllerTemp);
+    outFile.print(",")
+    outFile.print(isMoving);
     outFile.println();
   }
   outFile.close();
