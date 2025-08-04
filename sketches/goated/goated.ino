@@ -276,6 +276,8 @@ void printToSerialMonitor() {
   Serial.println(cumulativeEnergy, 4);
   Serial.print("MPGe: ");
   Serial.println(mpge, 9);
+  Serial.print("Is moving: ");
+  Serial.println(isMoving);
   Serial.println();
 }
 
@@ -337,7 +339,7 @@ void printToSD() {
     outFile.print(motorTemp);
     outFile.print(",");
     outFile.print(motorControllerTemp);
-    outFile.print(",")
+    outFile.print(",");
     outFile.print(isMoving);
     outFile.println();
   }
