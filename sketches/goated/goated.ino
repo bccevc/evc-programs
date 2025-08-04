@@ -308,7 +308,7 @@ void printToSD() {
     outFile.print(",");
     outFile.print(course);
     outFile.print(",");
-    outFile.print(speed);
+    outFile.print(mph);
     outFile.print(",");
     outFile.print(distance);
     outFile.print(",");
@@ -349,7 +349,7 @@ void printToSD() {
 void printToLCD() {
   // First row
   lcd.setCursor(0, 0);
-  lcd.print(speed, 1);
+  lcd.print(mph, 1);
   lcd.print("MPH ");
 
   lcd.setCursor(8, 0);
